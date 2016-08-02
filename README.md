@@ -11,6 +11,7 @@
 - protobuf 3 -> brew update && brew install --devel protobuf
 
 **-> protobuf 3 installation needs [Homebrew](http://brew.sh).**
+
 Follow link and install or execute the command
 
 ```
@@ -34,3 +35,7 @@ in your terminal.
 - install requirements
 - start as many bots as you like (in new Terminal window)
 
+###**TO-DO**
+- edit configuration files
+- check for requirements (Python, Homebrew etc pp.)
+- You tell me
