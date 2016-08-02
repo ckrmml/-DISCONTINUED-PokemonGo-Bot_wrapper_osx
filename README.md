@@ -37,7 +37,7 @@ in your terminal.
 - chmod +x start.sh
 - ./start.sh
 
-**scroll down for an usage example***
+**see wiki for an usage example***
 
 ###**ChangeLog**
 ####**v0.1**
