@@ -5,7 +5,9 @@ This wrapper script will allow you to install the PokemonGo-Bot on Mac OSX and e
 
 **As of now you have to edit the configuration file yourself.**
 
-Everything beside that, like cloning desired branch, installing and updating requirements and submodule, initializing and activating Python virtualenv will be done by the script. Edit your configuration files and simply choose which accounts the bot schould be playing.
+Everything beside that, like cloning desired branch, installing and updating requirements and submodule, initializing and activating Python virtualenv will be done by the script. Edit your configuration files and simply choose which accounts the bot should be playing.
+
+**This script will download the bot inside the folder it resides in, you will have to edit a new config or copy your old over there**
 
 ###**Requirements for PokemonGo-Bot you have to install by yourself**
 
