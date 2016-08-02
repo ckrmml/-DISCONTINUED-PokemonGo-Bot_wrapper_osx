@@ -1,8 +1,8 @@
-PokemonGo-Bot_wrapper_osx
+#PokemonGo-Bot_wrapper_osx
 
-A wrapper file for [PokemonGo-Bot](https://github.com/PokemonGoF/PokemonGo-Bot) for OSX
+##A wrapper file for [PokemonGo-Bot](https://github.com/PokemonGoF/PokemonGo-Bot) for OSX
 
-Requirements for PokemonGo-Bot you have to install by yourself
+###**Requirements for PokemonGo-Bot you have to install by yourself**
 
 - [Python 2.7.x](http://docs.python-guide.org/en/latest/starting/installation/)
 - [pip](https://pip.pypa.io/en/stable/installing/)
@@ -18,14 +18,14 @@ Requirements for PokemonGo-Bot you have to install by yourself
 
 in your terminal.
 
-USAGE
+###**USAGE**
 - download zip or clone
 - open Terminal and cd to directory
 - chmod +x start.sh
 - ./start.sh
 
-ChangeLog
-v0.1
+###**ChangeLog**
+####**v0.1**
 - install master or dev branch
 - update bot and requirements
 - init/update submodule
