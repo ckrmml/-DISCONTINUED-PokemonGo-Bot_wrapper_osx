@@ -10,7 +10,8 @@
 - [virtualenv](https://virtualenv.pypa.io/en/stable/installation/) (Recommended for the bot, definitely needed for the wrapper)
 - protobuf 3 -> brew update && brew install --devel protobuf
 
--> protobuf 3 installation needs [Homebrew](http://brew.sh). Follow link and install or execute the command
+**-> protobuf 3 installation needs [Homebrew](http://brew.sh).**
+Follow link and install or execute the command
 
 ```
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
