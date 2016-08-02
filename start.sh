@@ -67,7 +67,8 @@ display_menu()
 	if [[ ! -d ./PokemonGo-Bot ]] ; then
 		print_command i "Choose and install PokemonGo-Bot branch"
 	fi
-	if [[ -d ./PokemonGo-Bot ]] && [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -print -quit)" ]] ; then
+	if [[ -d ./PokemonGo-Bot ]] ; then
+		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 		print_msg_new ""
 		print_msg_new "Please go to "
 		print_msg_new ""
@@ -77,10 +78,13 @@ display_menu()
 		print_msg_new "After you have done this, please enter 'r' "
 		print_msg_new "or 'R' as choice or restart the wrapper."
 		print_msg_new ""
+		fi
 	fi
-	if [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -print -quit)" ]] ; then
-		print_command s "Start PokemonGo-Bot"
-		print_command u "Update Bot"
+	if [[ -d ./PokemonGo-Bot ]] ; then
+		if [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
+			print_command s "Start PokemonGo-Bot"
+			print_command u "Update Bot"
+		fi
 	fi
 	print_command x "Quit"
 	print_msg_new ""
@@ -97,7 +101,7 @@ display_menu()
 branch_menu()
 {
 	clear
-	print_banner "PokemonGo-Bot installer and starter"
+	print_banner "PokemonGo-Bot Wrapper OSX"
 	print_msg_new ""
 	print_command m "Choose master branch"
 	print_command d "Choose dev branch"
@@ -124,7 +128,6 @@ move_to_dir()
 new_window() 
 {
     TMP_FILE="$ACTIVE_CONFIG.command"
-    echo source command_template.sh > $TMP_FILE
 
 	while read line ; do
 		echo "$line" >> $TMP_FILE
