@@ -1,6 +1,11 @@
 #PokemonGo-Bot_wrapper_osx
 
 ##A wrapper file for [PokemonGo-Bot](https://github.com/PokemonGoF/PokemonGo-Bot) for OSX
+This wrapper script will allow you to install the PokemonGo-Bot on Mac OSX and execute as many instances as you like.
+
+**As of now you have to edit the configuration file yourself.**
+
+Everything beside that, like cloning desired branch, installing and updating requirements and submodule, initializing and activating Python virtualenv will be done by the script. Edit your configuration files and simply choose which accounts the bot schould be playing.
 
 ###**Requirements for PokemonGo-Bot you have to install by yourself**
 
@@ -28,14 +33,14 @@ in your terminal.
 
 ###**ChangeLog**
 ####**v0.1**
-- install master or dev branch
-- update bot and requirements
+- install/update bot (master or dev branch)
+- install/update requirements
 - init/update submodule
 - install/init Python virtualenv
-- install requirements
-- start as many bots as you like (in new Terminal window)
+- start as many bots as you like (in new Terminal windows)
 
 ###**TO-DO**
 - edit configuration files
 - check for requirements (Python, Homebrew etc pp.)
-- You tell me
+- had one thing i can't remember now, it will come anyway
+- you tell me
