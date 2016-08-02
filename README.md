@@ -11,6 +11,7 @@
 - protobuf 3 -> brew update && brew install --devel protobuf
 
 **-> protobuf 3 installation needs [Homebrew](http://brew.sh).**
+
 Follow link and install or execute the command
 
 ```
