@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# This file will start the bot with desired configuration
+# All necessary infos get echoed over from the main script
+# and the command will be executed afterwards. This should
+# enable us running as many bots as wanted.
+
+print_msg_new()
+{
+	text=$1
+	printf '%s\\n' "$text"
+}
+
+print_msg()
+{
+	text=$1
+	printf '%s' "$text"
+}
+
+print_done()
+{
+ printf '%s\\n' "[DONE]"
+}
+
+print_fail()
+{
+ printf '%s\\n' "[FAILED]"
+}
+
+move_to_dir()
+{
+	print_msg " - Moving to bot directory..."
+	cd ./PokemonGo-Bot
+	print_done
+}
+
+setup_virtualenv()
+{
+	printf '%s' " - Setting up Python virtualenv..."
+	virtualenv -q .
+	OUT=$?
+	if [ $OUT -eq 0 ] ; then
+		print_done
+	else
+		print_fail
+		print_msg_new ""
+		print_msg_new "   Error code $OUT returned !! "
+		print_msg_new ""
+		print_msg_new " - Exiting..."
+		sleep 5
+		exit 1
+	fi
+}
+
+activate_virtualenv()
+{
+	printf '%s' " - Activating Python virtualenv..."
+	source bin/activate
+	OUT=$?
+	if [ $OUT -eq 0 ] ; then
+		print_done
+	else
+		print_fail
+		print_msg_new ""
+		print_msg_new "   Error code $OUT returned !! "
+		print_msg_new ""
+		print_msg_new " - Exiting..."
+		sleep 5
+		exit 1
+	fi
+}
