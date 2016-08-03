@@ -8,6 +8,7 @@
 # PokemonGo-Bot variables
 export BRANCH="" # dev or master
 export ACTIVE_CONFIG="" # account to start
+export GITHUBLINK_BOT="https://github.com/PokemonGoF/PokemonGo-Bot-Desktop.git"
 # PokemonGo-Bot wrapper scrip variables
 export GITHUBLINK="https://github.com/ckrmml/PokemonGo-Bot_wrapper_osx.git"
 export AUTOUPDATE=1 # Defines if we should turn on auto updates, if available
@@ -352,21 +353,65 @@ install_bot()
 update_bot() 
 {
 	clear
-	print_banner "Update PokemonGo-Bot"
-	move_to_dir
-	printf '%s' " - Updating bot..."
-	git pull -q 2>/dev/null
-	OUT=$?
-	if [ $OUT -eq 0 ] ; then
+	if [[ -d ".git" && ! -z "$(which git)" ]]; then
+		print_banner "PokemonGo-Bot in progress"
+		move_to_dir
+		print_msg " - Checking git version..."
+		local GITVERSION="$(git --version | cut -d' ' -f3)"
+		if version_less_than "$GITVERSION" "$NEEDEDGIT"; then
+			print_msg_new ""
+			print_msg_new ""
+			printf '%s\t%s\n' "WARNING: Your git version is lower than the required!"
+			printf '\t%s\n' "Your git version: $GITVERSION"
+			printf '\t%s\n' "Required git version: $NEEDEDGIT"
+			printf '\t%s\n' "Auto-update feature has been disabled, please update your git to latest version"
+			press_enter
+			return 0
+		fi
 		print_done
-	else
-		print_fail
-		print_msg_new ""
-		print_msg_new "   Error code $OUT returned !! "
-		print_msg_new ""
-		print_msg_new " - Exiting..."
-		sleep 5
-		exit 1
+		print_msg " - Checking network connection..."
+		if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
+			print_msg_new ""
+			print_msg_new ""
+			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
+			printf '\t%s\n' "Auto-update feature has been disabled"
+			press_enter
+			return 0
+		else
+			print_done
+		fi
+		
+		local REPO="origin"
+		local OLDHEAD="$(git rev-parse HEAD)"
+		local CURBRANCH="$(git rev-parse --abbrev-ref HEAD)"
+		print_msg " - Checking branch..."
+		print_done
+		if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
+			git remote add -t "$CURBRANCH" -m "$CURBRANCH" "$REPO" "$GITHUBLINK_BOT"
+		fi
+		print_msg " - Fetching current version..."
+		git fetch -q "$REPO" "$CURBRANCH"
+		local HEAD="$(git rev-parse "$REPO/$CURBRANCH")"
+		if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
+			print_msg_new ""
+			print_msg_new ""
+			print_msg_new "Found new version!"
+			print_msg_new "Changelog:"
+			print_msg_new "=========="
+			git --no-pager log --abbrev-commit --decorate --date=relative --pretty=format:'%C(bold red)%h%Creset %C(bold green)(%cr)%Creset - %C(bold yellow)%s%Creset %C(bold blue)commited by%Creset %C(bold cyan)%an%Creset' "$OLDHEAD..$HEAD"
+			print_msg_new "" # Because git log doesn't finish with newline
+			print_msg_new "=========="
+			press_enter
+			git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (echo; echo "WARNING: PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now. Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
+			print_msg_new "PokemonGo-Bot_wrapper_osx has been updated, it will now restart itself"
+			press_enter
+			exec ./start.sh
+		else
+			print_msg_new ""
+			print_msg_new ""
+			print_msg_new "No new updates found"
+			sleep 1
+		fi
 	fi
 	
 	activate_virtualenv
