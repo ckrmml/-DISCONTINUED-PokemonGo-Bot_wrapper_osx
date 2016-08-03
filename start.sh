@@ -142,18 +142,25 @@ new_window()
 	echo "" >> $TMP_FILE
 		
     # Copy over while loop
-	echo "print_msg_new \"Executing PokemonGo-Bot with config $ACTIVE_CONFIG...\"" >> $TMP_FILE
+	echo "print_msg_new \"\"" >> $TMP_FILE
 	echo "move_to_dir" >> $TMP_FILE
 	echo "activate_virtualenv" >> $TMP_FILE
+	echo "print_msg_new \" - Executing PokemonGo-Bot with config $ACTIVE_CONFIG...\"" >> $TMP_FILE
+	echo "print_msg_new \"\"" >> $TMP_FILE
 	echo "while true ; do" >> $TMP_FILE
 	echo "	./pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_FILE
-	echo "	print_msg_new \"PokemonGo-Bot exited...\"" >> $TMP_FILE
-	echo "	print_msg_new \"Restarting...\"" >> $TMP_FILE
+	echo "	print_msg_new \"\"" >> $TMP_FILE
+	echo "	print_msg_new \" - PokemonGo-Bot exited...\"" >> $TMP_FILE
+	echo "	print_msg_new \" - Restarting in five seconds...\"" >> $TMP_FILE
+	echo "print_msg_new \"\"" >> $TMP_FILE
 	echo "	sleep 5;" >> $TMP_FILE
 	echo "done" >> $TMP_FILE
 	
     chmod +x "$TMP_FILE"
     open -b com.apple.terminal "$TMP_FILE"
+    
+    sleep 2
+    rm -f ./*.command
 }
 
 # subroutines for cloning, installation and updating
@@ -344,7 +351,6 @@ configure_menu()
 start_menu()
 {
     clear
-#    cd ./PokemonGo-Bot/configs
     local COUNT=0
     local LASTFOUND=""
 	print_banner "Start bot(s)"
@@ -367,9 +373,8 @@ start_menu()
         x|X) return 0 ;;
         *)
         CHOICE="$(basename "$CHOICE")"
-        if [[ -f "./PokemonGo-Bot/configs/$CHOICE" ]]; then
+        if [[ -f "./PokemonGo-Bot/configs/$CHOICE" ]] ; then
             ACTIVE_CONFIG="$CHOICE"
-#            cd .. && cd ..
             new_window
 		else
             print_msg_new "Invalid selection"
@@ -379,12 +384,6 @@ start_menu()
     esac
 }
 
-clean_up() 
-{
-	rm *.command
-}
-
-clean_up
 while true ; do
 	display_menu
 done
