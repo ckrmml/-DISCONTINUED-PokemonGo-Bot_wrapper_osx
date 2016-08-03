@@ -7,6 +7,10 @@
 
 export BRANCH=""
 export ACTIVE_CONFIG=""
+export GITHUBLINK="https://github.com/ckrmml/PokemonGo-Bot_wrapper_osx.git"
+export AUTOUPDATE="1" # Defines if we should turn on auto updates, if available
+export GITHUBBRANCH="master"
+export NEEDEDGIT="1.8"
 
 ## check for requirements
 TOOLS=(python pip git virtualenv brew)
@@ -31,6 +35,11 @@ fi
 printf "\n"
 
 # text messages etc pp
+press_enter()
+{
+    read -p "Press [Enter] key to continue..."
+}
+
 print_msg() 
 {
     text=$1
@@ -367,8 +376,8 @@ start_menu()
             	start_bot
 			else
             	print_msg_new "Invalid selection"
-            	read -p "Press [Enter] key to continue..."
-        	fi
+				press_enter        	
+			fi
         done
         ;;
     esac
@@ -454,6 +463,94 @@ start_web()
     
     exec ./start.sh
 }
+# Auto-update feature
+CHECK_UPDATE() {
+	if [[ -d ".git" && ! -z "$(which git)" ]]; then
+		print_banner "Auto-update in progress"
+		
+		print_msg " - Checking git version..."
+		local GITVERSION="$(git --version | cut -d' ' -f3)"
+		if version_less_than "$GITVERSION" "$NEEDEDGIT"; then
+			print_msg_new ""
+			print_msg_new ""
+			printf '%s\t%s\n' "WARNING: Your git version is lower than the required!"
+			printf '\t%s\n' "Your git version: $GITVERSION"
+			printf '\t%s\n' "Required git version: $NEEDEDGIT"
+			printf '\t%s\n' "Auto-update feature has been disabled, please update your git to latest version"
+			press_enter
+			return 0
+		fi
+		print_done
+		print_msg " - Checking network connection..."
+		if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
+			print_msg_new ""
+			print_msg_new ""
+			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
+			printf '\t%s\n' "Auto-update feature has been disabled"
+			press_enter
+			return 0
+		else
+			print_done
+		fi
+		
+		local REPO="origin"
+		local OLDHEAD="$(git rev-parse HEAD)"
+		local CURBRANCH="$(git rev-parse --abbrev-ref HEAD)"
+		print_msg " - Checking branch..."
+		if [[ "$CURBRANCH" != "$GITHUBBRANCH" ]]; then
+			print_msg_new ""
+			print_msg_new ""
+			printf '%s\t%s\n' "ATTENTION: You're currently using $CURBRANCH branch, and this is not the default $GITHUBBRANCH branch."
+			printf '\t%s\n' "Auto-update feature has been disabled"
+			print_msg_new ""
+			press_enter
+			return 0
+		fi
+		print_done
+		if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
+			git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
+		fi
+		print_msg " - Fetching current version..."
+		git fetch -q "$REPO" "$GITHUBBRANCH"
+		local HEAD="$(git rev-parse "$REPO/$GITHUBBRANCH")"
+		if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
+			print_msg_new ""
+			print_msg_new ""
+			print_msg_new "Found new version!"
+			print_msg_new "Changelog:"
+			print_msg_new "=========="
+			git --no-pager log --abbrev-commit --decorate --date=relative --pretty=format:'%C(bold red)%h%Creset %C(bold green)(%cr)%Creset - %C(bold yellow)%s%Creset %C(bold blue)commited by%Creset %C(bold cyan)%an%Creset' "$OLDHEAD..$HEAD"
+			print_msg_new "" # Because git log doesn't finish with newline
+			print_msg_new "=========="
+			git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (echo; echo "WARNING: PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now. Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
+			print_msg_new "PokemonGo-Bot_wrapper_osx has been updated, it will now restart itself"
+			press_enter
+			exec ./start.sh
+		else
+			print_msg_new ""
+			print_msg_new ""
+			print_msg_new "No new updates found"
+			sleep 1
+		fi
+	fi
+}
+
+# Compare two versions
+version_less_than() {
+	# $1 - Input version
+	# $2 - Compared version
+	# Returns true if $1 < $2, false otherwise
+	if [[ "$1" != "$2" && "$(echo -e "$1\n$2" | sort | head -n 1)" = "$1" ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+# check for updates
+if [[ "$AUTOUPDATE" -eq 1 ]]; then
+	CHECK_UPDATE
+fi
 
 # core app
 while true ; do

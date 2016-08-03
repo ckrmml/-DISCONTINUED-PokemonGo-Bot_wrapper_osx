@@ -7,8 +7,16 @@ This wrapper script will allow you to install the PokemonGo-Bot on Mac OSX and e
 
 **As of now you have to edit the configuration file yourself or copy yours over there**
 
-Everything beside that, like cloning desired branch, installing and updating requirements and submodule, initializing and activating 
-Python virtualenv will be done by the script. Edit your configuration files and simply choose which accounts the bot should be playing.
+Everything beside that, like 
+- cloning desired branch, 
+- installing and updating requirements and submodule, 
+- initializing and activating Python virtualenv 
+- batch start all accounts
+- batch start selection of accounts
+- start web server
+
+will be done by the script. 
+Edit your configuration files and simply choose which accounts the bot should be playing.
 
 As this script will always download the latest commit, your old configuration files might no longer work. If you want an older commit of the 
 bot, or already have one installed, just copy it over there and it should probably work.
@@ -37,9 +45,23 @@ in your terminal.
 - chmod +x start.sh
 - ./start.sh
 
-**see wiki for an usage example***
+**batch start all accounts**
+	- enter ```[a]``` or ```[A]``` as choice,
+**batch start a selection**
+	- enter the names of the accounts separated by a space like this 
+	```ACCOUNT_1_config.json ACCOUNT_2_config.json ...```
+
+
+**see wiki for an usage example**
 
 ###**ChangeLog**
+####**v0.3**
+- batch start all accounts
+- batch start selection of accounts
+- auto-update wrapper at startup
+- some code fixes
+- changes to formatting
+
 ####**v0.2**
 - check for requirements (Python, Homebrew, virtualenv, pip, git)
 - start the web server
@@ -55,10 +77,8 @@ in your terminal.
 
 ###**TO-DO**
 - [ ] edit configuration files
-- [x] check for requirements (Python, Homebrew etc pp.)
 - [ ] check for protobuf
 - [ ] had one thing i can't remember now, it will come anyway
-- [x] web interface
 - [ ] you tell me
 
 
