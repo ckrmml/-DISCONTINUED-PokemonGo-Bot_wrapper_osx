@@ -8,6 +8,28 @@
 export BRANCH=""
 export ACTIVE_CONFIG=""
 
+## check for requirements
+TOOLS=(python pip git virtualenv brew)
+## check for tools
+if [[ "$(which "${TOOLS[@]}" >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then
+    MISSINGTOOLS=""
+    for TOOL in "${TOOLS[@]}"; do
+        if [[ -z "$(which $TOOL)" ]]; then
+            MISSINGTOOLS+=" $TOOL"
+        fi
+    done
+    printf "\n"
+    printf '%s\t%s\n' "Error:"  "It looks like you don't have the required tool(s): "
+    printf "\n"
+    printf '\t%s\n' "$MISSINGTOOLS"
+    printf "\n"
+    printf '\t%s\n' "This check was made through 'which' command"
+    printf '\t%s\n' "Please install missing tool(s) and relaunch"
+    printf "\n"
+    exit 1 
+fi
+printf "\n"
+
 # text messages etc pp
 print_msg() 
 {
