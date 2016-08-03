@@ -42,6 +42,7 @@ in your terminal.
 ###**ChangeLog**
 ####**v0.2**
 - check for requirements (Python, Homebrew, virtualenv, pip, git)
+- start the web server
 - minor code fixes
 
 ####**v0.1**
@@ -57,6 +58,7 @@ in your terminal.
 - [x] check for requirements (Python, Homebrew etc pp.)
 - [ ] check for protobuf
 - [ ] had one thing i can't remember now, it will come anyway
+- [x] web interface
 - [ ] you tell me
 
 
