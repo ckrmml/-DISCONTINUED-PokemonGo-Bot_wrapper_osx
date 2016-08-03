@@ -8,6 +8,28 @@
 export BRANCH=""
 export ACTIVE_CONFIG=""
 
+## check for requirements
+TOOLS=(python pip git virtualenv brew)
+## check for tools
+if [[ "$(which "${TOOLS[@]}" >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then
+    MISSINGTOOLS=""
+    for TOOL in "${TOOLS[@]}"; do
+        if [[ -z "$(which $TOOL)" ]]; then
+            MISSINGTOOLS+=" $TOOL"
+        fi
+    done
+    printf "\n"
+    printf '%s\t%s\n' "Error:"  "It looks like you don't have the required tool(s): "
+    printf "\n"
+    printf '\t%s\n' "$MISSINGTOOLS"
+    printf "\n"
+    printf '\t%s\n' "This check was made through 'which' command"
+    printf '\t%s\n' "Please install missing tool(s) and relaunch"
+    printf "\n"
+    exit 1 
+fi
+printf "\n"
+
 # text messages etc pp
 print_msg() 
 {
@@ -70,19 +92,20 @@ display_menu()
 	if [[ -d ./PokemonGo-Bot ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 		print_msg_new ""
-		print_msg_new "Please go to "
+		printf '\t%s\n' "Please go to "
 		print_msg_new ""
-		print_msg_new "$PWD/PokemonGo-Bot/configs"
+		printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
 		print_msg_new ""
-		print_msg_new "and create a configuration file to continue."
-		print_msg_new "After you have done this, please enter 'r' "
-		print_msg_new "or 'R' as choice or restart the wrapper."
+		printf '\t%s\n' "and create a configuration file to continue."
+		printf '\t%s\n' "After you have done this, please enter 'r' "
+		printf '\t%s\n' "or 'R' as choice or restart the wrapper."
 		print_msg_new ""
 		fi
 	fi
-	if [[ -d ./PokemonGo-Bot ]] ; then
+	if [[ -d ./PokemonGo-Bot/configs ]] ; then
 		if [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			print_command s "Start PokemonGo-Bot"
+			print_command w "Start web interface"
 			print_command u "Update Bot"
 		fi
 	fi
@@ -93,6 +116,7 @@ display_menu()
         i|I) branch_menu ;;
         s|S) start_menu ;;
         u|U) update_bot ;;
+        w|W) start_web ;;
         r|R) exec ./start.sh ;;
         x|X) exit 0 ;;
     esac
@@ -125,7 +149,7 @@ move_to_dir()
 	print_done
 }
 
-new_window() 
+start_bot() 
 {
     TMP_FILE="$ACTIVE_CONFIG.command"
 
@@ -159,7 +183,7 @@ new_window()
     chmod +x "$TMP_FILE"
     open -b com.apple.terminal "$TMP_FILE"
     
-    sleep 2
+    sleep 5
     rm -f ./*.command
 }
 
@@ -366,7 +390,7 @@ start_menu()
 	print_msg_new ""
     if [[ "$COUNT" -eq 1 ]]; then
         ACTIVE_CONFIG="$(basename "$LASTFOUND")" # If we have only one config file, there's nothing to choose from, so we can save some precious seconds
-        new_window
+        start_bot
     fi
     read -p "Please choose: " CHOICE
     case "$CHOICE" in
@@ -375,7 +399,7 @@ start_menu()
         CHOICE="$(basename "$CHOICE")"
         if [[ -f "./PokemonGo-Bot/configs/$CHOICE" ]] ; then
             ACTIVE_CONFIG="$CHOICE"
-            new_window
+            start_bot
 		else
             print_msg_new "Invalid selection"
             read -p "Press [Enter] key to continue..."
