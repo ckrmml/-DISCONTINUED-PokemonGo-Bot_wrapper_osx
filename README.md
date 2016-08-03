@@ -52,10 +52,10 @@ in your terminal.
 - exiting a running bot by pressing [ctrl]+[c] -> the bot will restart after 5 seconds. it's pretty handy sometimes. If you want to exit the bot completely, hit [ctrl]+[c] twice
 
 ###**TO-DO**
-- [] edit configuration files
+- [ ] edit configuration files
 - [x] check for requirements (Python, Homebrew etc pp.)
-- [] check for protobuf
-- [] had one thing i can't remember now, it will come anyway
-- [] you tell me
+- [ ] check for protobuf
+- [ ] had one thing i can't remember now, it will come anyway
+- [ ] you tell me
 
 
