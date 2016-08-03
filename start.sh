@@ -149,45 +149,7 @@ move_to_dir()
 	print_done
 }
 
-start_bot() 
-{
-    TMP_FILE="$ACTIVE_CONFIG.command"
-
-	while read line ; do
-		echo "$line" >> $TMP_FILE
-	done < command_template
-	
-	# Copy over vars
-	echo "export ACTIVE_CONFIG="$ACTIVE_CONFIG"" >> $TMP_FILE
-	echo "" >> $TMP_FILE
-
-    # Change to directory
-    echo "cd $(pwd)" >> $TMP_FILE
-	echo "" >> $TMP_FILE
-		
-    # Copy over while loop
-	echo "print_msg_new \"\"" >> $TMP_FILE
-	echo "move_to_dir" >> $TMP_FILE
-	echo "activate_virtualenv" >> $TMP_FILE
-	echo "print_msg_new \" - Executing PokemonGo-Bot with config $ACTIVE_CONFIG...\"" >> $TMP_FILE
-	echo "print_msg_new \"\"" >> $TMP_FILE
-	echo "while true ; do" >> $TMP_FILE
-	echo "	./pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_FILE
-	echo "	print_msg_new \"\"" >> $TMP_FILE
-	echo "	print_msg_new \" - PokemonGo-Bot exited...\"" >> $TMP_FILE
-	echo "	print_msg_new \" - Restarting in five seconds...\"" >> $TMP_FILE
-	echo "print_msg_new \"\"" >> $TMP_FILE
-	echo "	sleep 5;" >> $TMP_FILE
-	echo "done" >> $TMP_FILE
-	
-    chmod +x "$TMP_FILE"
-    open -b com.apple.terminal "$TMP_FILE"
-    
-    sleep 5
-    rm -f ./*.command
-}
-
-# subroutines for cloning, installation and updating
+# subroutines for cloning, installation, updating and starting
 clone_bot_git()
 {
 	clear
@@ -328,7 +290,7 @@ install_bot()
 	exec ./start.sh
 }
 
-update_bot()
+update_bot() 
 {
 	clear
 	print_banner "Update Bot"
@@ -397,6 +359,7 @@ start_menu()
     read -p "Please choose: " CHOICE
     case "$CHOICE" in
         x|X) return 0 ;;
+        a|A) batch_start ;; 
         *)
         CHOICE="$(basename "$CHOICE")"
         if [[ -f "./PokemonGo-Bot/configs/$CHOICE" ]] ; then
@@ -408,6 +371,56 @@ start_menu()
         fi
         ;;
     esac
+}
+
+batch_start()
+{
+    while read line ; do
+        LASTFOUND="$line"
+        if [[ -f "$line" ]] ; then
+ 			CHOICE="$(basename "$line")"
+           	ACTIVE_CONFIG="$CHOICE"
+            start_bot
+        fi
+    done < <(find ./PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -maxdepth 1)
+}
+
+start_bot() 
+{
+    TMP_FILE="$ACTIVE_CONFIG.command"
+
+	while read line ; do
+		echo "$line" >> $TMP_FILE
+	done < command_template
+	
+	# Copy over vars
+	echo "export ACTIVE_CONFIG="$ACTIVE_CONFIG"" >> $TMP_FILE
+	echo "" >> $TMP_FILE
+
+    # Change to directory
+    echo "cd $(pwd)" >> $TMP_FILE
+	echo "" >> $TMP_FILE
+		
+    # Copy over while loop
+	echo "print_msg_new \"\"" >> $TMP_FILE
+	echo "move_to_dir" >> $TMP_FILE
+	echo "activate_virtualenv" >> $TMP_FILE
+	echo "print_msg_new \" - Executing PokemonGo-Bot with config $ACTIVE_CONFIG...\"" >> $TMP_FILE
+	echo "print_msg_new \"\"" >> $TMP_FILE
+	echo "while true ; do" >> $TMP_FILE
+	echo "	./pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_FILE
+	echo "	print_msg_new \"\"" >> $TMP_FILE
+	echo "	print_msg_new \" - PokemonGo-Bot exited...\"" >> $TMP_FILE
+	echo "	print_msg_new \" - Restarting in five seconds...\"" >> $TMP_FILE
+	echo "print_msg_new \"\"" >> $TMP_FILE
+	echo "	sleep 5;" >> $TMP_FILE
+	echo "done" >> $TMP_FILE
+	
+    chmod +x "$TMP_FILE"
+    open -b com.apple.terminal "$TMP_FILE"
+    
+    sleep 2
+    rm -f ./*.command
 }
 
 start_web()
@@ -436,8 +449,12 @@ start_web()
     print_msg_new "Open your browser and visit the site:"
     print_msg_new "http://localhost:8000"
     print_msg_new "to view the map"
+    sleep 5
+    
+    exec ./start.sh
 }
 
+# core app
 while true ; do
 	display_menu
 done

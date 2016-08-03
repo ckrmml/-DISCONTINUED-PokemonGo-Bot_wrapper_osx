@@ -19,12 +19,12 @@ print_msg()
 
 print_done()
 {
- printf '%s\\n' "[DONE]"
+	printf '%s\\n' "[DONE]"
 }
 
 print_fail()
 {
- printf '%s\\n' "[FAILED]"
+	printf '%s\\n' "[FAILED]"
 }
 
 move_to_dir()
