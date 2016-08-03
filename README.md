@@ -43,6 +43,7 @@ in your terminal.
 ####**v0.2**
 - check for requirements (Python, Homebrew, virtualenv, pip, git)
 - minor code fixes
+
 ####**v0.1**
 - install/update bot (master or dev branch)
 - install/update requirements
