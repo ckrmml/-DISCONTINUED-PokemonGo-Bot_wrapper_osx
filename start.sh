@@ -364,6 +364,8 @@ update_bot()
 		sleep 5
 		exit 1
 	fi
+	cd ..
+	exec ./start.sh
 }
 
 configure_menu()
@@ -406,6 +408,34 @@ start_menu()
         fi
         ;;
     esac
+}
+
+start_web()
+{
+	TMP_FILE="web.command"
+	
+    # Change to directory
+    echo "cd $(pwd)/PokemonGo-Bot/web" >> $TMP_FILE
+	echo "" >> $TMP_FILE
+		
+    # Copy over while loop
+	echo "while true ; do" >> $TMP_FILE
+	echo "	python -m SimpleHTTPServer" >> $TMP_FILE
+	echo "print_msg_new \"\"" >> $TMP_FILE
+	echo "	print_msg_new \" - Restarting in five seconds...\"" >> $TMP_FILE
+	echo "print_msg_new \"\"" >> $TMP_FILE
+	echo "	sleep 5;" >> $TMP_FILE
+	echo "done" >> $TMP_FILE
+	
+    chmod +x "$TMP_FILE"
+    open -b com.apple.terminal "$TMP_FILE"
+    
+    sleep 5
+    rm -f ./*.command
+    
+    print_msg_new "Open your browser and visit the site:"
+    print_msg_new "http://localhost:8000"
+    print_msg_new "to view the map"
 }
 
 while true ; do
