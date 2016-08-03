@@ -293,7 +293,7 @@ install_bot()
 update_bot() 
 {
 	clear
-	print_banner "Update Bot"
+	print_banner "Update PokemonGo-Bot"
 	move_to_dir
 	printf '%s' " - Updating bot..."
 	git pull -q 2>/dev/null
@@ -340,15 +340,15 @@ start_menu()
 {
     clear
     local COUNT=0
-    local LASTFOUND=""
+    file_list=()
 	print_banner "Start bot(s)"
     print_msg_new "Searching for configuration files you've created in the past..."
     print_msg_new "=-=-=-=-=-=-=-=-=-==-=-=-="
-    while read line; do
-        ((COUNT++))
-        LASTFOUND="$line"
-        basename "$LASTFOUND"
-    done < <(find ./PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -maxdepth 1) # Avoid a subshell, because we must remember variables
+ 	while IFS= read -d $'\0' -r file ; do     
+ 		((COUNT++))
+		file_list=("${file_list[@]}" "$file")
+ 	done < <(find ./PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -maxdepth 1 -print0) # Avoid a subshell, because we must remember variables
+	printf '%s\n' "$(basename "${file_list[@]}")"
     print_msg_new "=-=-=-=-=-=-=-=-=-==-=-=-="
     print_msg_new "$COUNT config files were found"
 	print_msg_new ""
@@ -356,19 +356,20 @@ start_menu()
         ACTIVE_CONFIG="$(basename "$LASTFOUND")" # If we have only one config file, there's nothing to choose from, so we can save some precious seconds
         start_bot
     fi
-    read -p "Please choose: " CHOICE
+    read -p "Please choose (x to return): " CHOICE
     case "$CHOICE" in
         x|X) return 0 ;;
         a|A) batch_start ;; 
         *)
-        CHOICE="$(basename "$CHOICE")"
-        if [[ -f "./PokemonGo-Bot/configs/$CHOICE" ]] ; then
-            ACTIVE_CONFIG="$CHOICE"
-            start_bot
-		else
-            print_msg_new "Invalid selection"
-            read -p "Press [Enter] key to continue..."
-        fi
+		for config in $CHOICE ; do
+        	if [[ -f "./PokemonGo-Bot/configs/$config" ]] ; then
+            	ACTIVE_CONFIG="$config"
+            	start_bot
+			else
+            	print_msg_new "Invalid selection"
+            	read -p "Press [Enter] key to continue..."
+        	fi
+        done
         ;;
     esac
 }
