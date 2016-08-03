@@ -140,7 +140,7 @@ display_menu()
 			printf '\t%s\n' "It looks like you copied over an instance of the bot you had installed before."
 			printf '\t%s\n' "If starting a bot does not work, try entering setup as choice."
 			print_msg_new ""
-			press_enter
+			print_msg_new ""
 #			move_to_dir
 #			setup_virtualenv
 #			activate_virtualenv
@@ -154,8 +154,11 @@ display_menu()
 			print_command s "Start PokemonGo-Bot"
 			print_command w "Start web interface"
 			print_command u "Update Bot"
+			print_msg_new ""
+			print_command r "Restart wrapper"
 		fi
 	fi
+	print_msg_new ""
 	print_command x "Quit"
 	print_msg_new ""
 	read -p "Please choose: " CHOICE
@@ -184,6 +187,7 @@ branch_menu()
 	print_msg_new ""
 	print_command m "Choose master branch"
 	print_command d "Choose dev branch"
+	print_msg_new ""
 	print_command x "Return"
 	print_msg_new ""
 	read -p "Please choose: " CHOICE
@@ -509,7 +513,8 @@ start_web()
     
     exec ./start.sh
 }
-# Auto-update feature
+
+# auto-update feature
 check_update() 
 {
 	clear
@@ -548,7 +553,7 @@ check_update()
 		if [[ "$CURBRANCH" != "$GITHUBBRANCH" ]]; then
 			print_msg_new ""
 			print_msg_new ""
-			printf '%s\t%s\n' "ATTENTION: You're currently using $CURBRANCH branch, and this is not the default $GITHUBBRANCH branch."
+			printf '%s\t%s\n' "WARNING: You're currently using $CURBRANCH branch, and this is not the default $GITHUBBRANCH branch."
 			printf '\t%s\n' "Auto-update feature has been disabled"
 			print_msg_new ""
 			press_enter
