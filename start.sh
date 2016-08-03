@@ -5,16 +5,18 @@
 #
 #
 
-export BRANCH=""
-export ACTIVE_CONFIG=""
+# PokemonGo-Bot variables
+export BRANCH="" # dev or master
+export ACTIVE_CONFIG="" # account to start
+# PokemonGo-Bot wrapper scrip variables
 export GITHUBLINK="https://github.com/ckrmml/PokemonGo-Bot_wrapper_osx.git"
-export AUTOUPDATE="1" # Defines if we should turn on auto updates, if available
+export AUTOUPDATE=1 # Defines if we should turn on auto updates, if available
 export GITHUBBRANCH="master"
 export NEEDEDGIT="1.8"
+export CLONE_OR_COPY=0
 
-## check for requirements
+# check for requirements
 TOOLS=(python pip git virtualenv brew)
-## check for tools
 if [[ "$(which "${TOOLS[@]}" >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then
     MISSINGTOOLS=""
     for TOOL in "${TOOLS[@]}"; do
@@ -33,6 +35,18 @@ if [[ "$(which "${TOOLS[@]}" >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then
     exit 1 
 fi
 printf "\n"
+
+# check for clone or copy
+if [[ -d ./PokemonGo-Bot ]] ; then
+	if [[ -f clone ]] ; then
+		CLONE_OR_COPY=1
+	else
+		touch copy
+	fi
+fi
+if [[ -f copy ]] ; then
+	CLONE_OR_COPY=2
+fi
 
 # text messages etc pp
 press_enter()
@@ -98,17 +112,41 @@ display_menu()
 	if [[ ! -d ./PokemonGo-Bot ]] ; then
 		print_command i "Choose and install PokemonGo-Bot branch"
 	fi
-	if [[ -d ./PokemonGo-Bot ]] ; then
+	if [[ -d ./PokemonGo-Bot ]] && [[ "$CLONE_OR_COPY" -eq 1 ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
-		print_msg_new ""
-		printf '\t%s\n' "Please go to "
-		print_msg_new ""
-		printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
-		print_msg_new ""
-		printf '\t%s\n' "and create a configuration file to continue."
-		printf '\t%s\n' "After you have done this, please enter 'r' "
-		printf '\t%s\n' "or 'R' as choice or restart the wrapper."
-		print_msg_new ""
+			print_msg_new ""
+			printf '\t%s\n' "Please go to "
+			print_msg_new ""
+			printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
+			print_msg_new ""
+			printf '\t%s\n' "and create a configuration file to continue."
+			printf '\t%s\n' "After you have done this, please enter 'r' "
+			printf '\t%s\n' "or 'R' as choice or restart the wrapper."
+			print_msg_new ""
+		fi
+	elif [[ -d ./PokemonGo-Bot ]] && [[ "$CLONE_OR_COPY" -eq 2 ]] ; then
+		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
+			print_msg_new ""
+			printf '\t%s\n' "Please go to "
+			print_msg_new ""
+			printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
+			print_msg_new ""
+			printf '\t%s\n' "and create a configuration file to continue."
+			printf '\t%s\n' "After you have done this, please enter 'r' "
+			printf '\t%s\n' "or 'R' as choice or restart the wrapper."
+			print_msg_new ""
+		else
+			print_msg_new ""
+			printf '\t%s\n' "It looks like you copied over an instance of the bot you had installed before."
+			printf '\t%s\n' "If starting a bot does not work, try entering setup as choice."
+			print_msg_new ""
+			press_enter
+#			move_to_dir
+#			setup_virtualenv
+#			activate_virtualenv
+#			install_req
+#			cd ..
+#			exec ./start.sh
 		fi
 	fi
 	if [[ -d ./PokemonGo-Bot/configs ]] ; then
@@ -126,6 +164,14 @@ display_menu()
         s|S) start_menu ;;
         u|U) update_bot ;;
         w|W) start_web ;;
+        setup) 
+			move_to_dir
+			setup_virtualenv
+			activate_virtualenv
+			install_req
+			init_sub
+			cd ..
+			exec ./start.sh ;;
         r|R) exec ./start.sh ;;
         x|X) exit 0 ;;
     esac
@@ -152,7 +198,6 @@ branch_menu()
 
 move_to_dir()
 {
-	#read -p "Please enter path to bot: " BOT_PATH
 	print_msg " - Moving to bot directory..."
 	cd ./PokemonGo-Bot
 	print_done
@@ -168,7 +213,8 @@ clone_bot_git()
 	git clone -q -b $branch https://github.com/PokemonGoF/PokemonGo-Bot 2>/dev/null
 	OUT=$?
 	if [ $OUT -eq 0 ] ; then
-		print_done
+	touch clone
+	print_done
 	else
 		print_fail
 		print_msg_new ""
@@ -464,7 +510,9 @@ start_web()
     exec ./start.sh
 }
 # Auto-update feature
-CHECK_UPDATE() {
+check_update() 
+{
+	clear
 	if [[ -d ".git" && ! -z "$(which git)" ]]; then
 		print_banner "Auto-update in progress"
 		
@@ -549,7 +597,7 @@ version_less_than() {
 
 # check for updates
 if [[ "$AUTOUPDATE" -eq 1 ]]; then
-	CHECK_UPDATE
+	check_update
 fi
 
 # core app
