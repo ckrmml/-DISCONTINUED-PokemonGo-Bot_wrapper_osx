@@ -40,6 +40,9 @@ in your terminal.
 **see wiki for an usage example***
 
 ###**ChangeLog**
+####**v0.2**
+- check for requirements (Python, Homebrew, virtualenv, pip, git)
+- minor code fixes
 ####**v0.1**
 - install/update bot (master or dev branch)
 - install/update requirements
@@ -49,10 +52,10 @@ in your terminal.
 - exiting a running bot by pressing [ctrl]+[c] -> the bot will restart after 5 seconds. it's pretty handy sometimes. If you want to exit the bot completely, hit [ctrl]+[c] twice
 
 ###**TO-DO**
-[] edit configuration files
-[x] check for requirements (Python, Homebrew etc pp.)
-[] check for protobuf
-[] had one thing i can't remember now, it will come anyway
-[] you tell me
+- [] edit configuration files
+- [x] check for requirements (Python, Homebrew etc pp.)
+- [] check for protobuf
+- [] had one thing i can't remember now, it will come anyway
+- [] you tell me
 
 
