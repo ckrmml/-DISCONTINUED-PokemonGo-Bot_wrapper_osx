@@ -8,13 +8,15 @@
 # PokemonGo-Bot variables
 export BRANCH="" # dev or master
 export ACTIVE_CONFIG="" # account to start
-export GITHUBLINK_BOT="https://github.com/PokemonGoF/PokemonGo-Bot-Desktop.git"
+export GITHUBLINK_BOT="https://github.com/PokemonGoF/PokemonGo-Bot.git"
+
 # PokemonGo-Bot wrapper scrip variables
 export GITHUBLINK="https://github.com/ckrmml/PokemonGo-Bot_wrapper_osx.git"
-export AUTOUPDATE=1 # Defines if we should turn on auto updates, if available
 export GITHUBBRANCH="master"
 export NEEDEDGIT="1.8"
 export CLONE_OR_COPY=0
+export BOT_UPDATE=0
+export WRAPPER_UPDATE=0
 
 # check for requirements
 TOOLS=(python pip git virtualenv brew)
@@ -99,16 +101,57 @@ rule()
 
 print_hu() 
 {
-	case dirname in
-		PokemonGo-Bot) printf '%s\n' " -> You are on $BRANCH branch" ;;
-		*) printf '%s\n' " -> You are currently not in bot directory" ;;
-	esac
+	printf '%s\n' "You are currently on $CURBRANCH branch of PokemonGo-Bot"
+	if [[ $BOT_UPDATE -eq 1 ]]; then
+		printf '%s\n' " -> There is an update available"
+	else
+		printf '%s\n' " -> This is the newest version"
+	fi
+}
+
+check_for_updates()
+{
+	clear
+	print_banner "Checking for bot and wrapper updates"
+	move_to_dir
+	print_msg " - Checking for PokemonGo-Bot updates..."
+	local REPO_BOT="origin"
+	local OLDHEAD_BOT="$(git rev-parse HEAD)"
+	local CURBRANCH_BOT="$(git rev-parse --abbrev-ref HEAD)"
+	if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
+		git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
+	fi
+	git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
+	local HEAD_BOT="$(git rev-parse "$REPO_BOT/$CURBRANCH_BOT")"
+	if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
+		BOT_UPDATE=1
+	fi
+	print_done
+	cd ..
+	print_msg " - Checking for wrapper updates..."
+	local REPO="origin"
+	local OLDHEAD="$(git rev-parse HEAD)"
+	local CURBRANCH="$(git rev-parse --abbrev-ref HEAD)"
+	if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
+		git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
+	fi
+	git fetch -q "$REPO" "$GITHUBBRANCH"
+	local HEAD="$(git rev-parse "$REPO/$GITHUBBRANCH")"
+	if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
+		WRAPPER_UPDATE=1
+	fi
+	print_done
 }
 
 display_menu()
 {
 	clear
-	print_banner "PokemonGo-Bot Wrapper OSX"
+	if [[ $WRAPPER_UPDATE -eq 1 ]]; then
+		print_banner "PokemonGo-Bot Wrapper OSX [Update available]"
+	else
+		print_banner "PokemonGo-Bot Wrapper OSX"
+	fi
+	print_hu
 	print_msg_new ""
 	if [[ ! -d ./PokemonGo-Bot ]] ; then
 		print_command i "Choose and install PokemonGo-Bot branch"
@@ -142,21 +185,20 @@ display_menu()
 			printf '\t%s\n' "If starting a bot does not work, try entering setup as choice."
 			print_msg_new ""
 			print_msg_new ""
-#			move_to_dir
-#			setup_virtualenv
-#			activate_virtualenv
-#			install_req
-#			cd ..
-#			exec ./start.sh
 		fi
 	fi
 	if [[ -d ./PokemonGo-Bot/configs ]] ; then
 		if [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			print_command s "Start PokemonGo-Bot"
 			print_command w "Start web interface"
-			print_command u "Update Bot"
+			if [[ $BOT_UPDATE -eq 1 ]] ; then
+				print_command u "Update Bot"
+			fi
 			print_msg_new ""
 			print_command r "Restart wrapper"
+			if [[ $WRAPPER_UPDATE -eq 1 ]] ; then
+				print_command w "Update wrapper"
+			fi
 		fi
 	fi
 	print_msg_new ""
@@ -176,6 +218,7 @@ display_menu()
 			init_sub
 			cd ..
 			exec ./start.sh ;;
+		w|W) check_update ;;
         r|R) exec ./start.sh ;;
         x|X) exit 0 ;;
     esac
@@ -559,13 +602,12 @@ start_web()
     exec ./start.sh
 }
 
-# auto-update feature
+# update feature
 check_update() 
 {
 	clear
 	if [[ -d ".git" && ! -z "$(which git)" ]]; then
-		print_banner "Auto-update in progress"
-		
+		print_banner "Wrapper-update in progress"
 		print_msg " - Checking git version..."
 		local GITVERSION="$(git --version | cut -d' ' -f3)"
 		if version_less_than "$GITVERSION" "$NEEDEDGIT"; then
@@ -633,7 +675,6 @@ check_update()
 	fi
 }
 
-# Compare two versions
 version_less_than() {
 	# $1 - Input version
 	# $2 - Compared version
@@ -645,11 +686,8 @@ version_less_than() {
 	fi
 }
 
-# check for updates
-if [[ "$AUTOUPDATE" -eq 1 ]]; then
-	check_update
-fi
-
+# boot things
+check_for_updates
 # core app
 while true ; do
 	display_menu
