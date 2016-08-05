@@ -108,18 +108,20 @@ move_to_dir()
 
 print_hu() 
 {
-	cd PokemonGo-Bot
-	local REPO_BOT="origin"
-	local CURBRANCH_BOT="$(git rev-parse --abbrev-ref HEAD)"
-	local OLDBRANCH_BOT="$(git rev-parse HEAD)"
-	local HEAD_BOT="$(git rev-parse "$REPO_BOT/$CURBRANCH_BOT")"
-	printf '%s\n' "You are currently on $(git rev-parse --abbrev-ref HEAD) branch of PokemonGo-Bot"
-	cd ..
-	if [[ $BOT_UPDATE -eq 1 ]]; then
-		printf '%s\n' " -> Your local bot is on commit: [$OLDBRANCH_BOT]"
-		printf '%s\n' " -> Newest commit on github is : [$HEAD_BOT]"
-	else
-		printf '%s\n' " -> This is the newest version"
+	if [[ -d ./PokemonGo-Bot ]] ; then
+		cd PokemonGo-Bot
+		local REPO_BOT="origin"
+		local CURBRANCH_BOT="$(git rev-parse --abbrev-ref HEAD)"
+		local OLDBRANCH_BOT="$(git rev-parse HEAD)"
+		local HEAD_BOT="$(git rev-parse "$REPO_BOT/$CURBRANCH_BOT")"
+		printf '%s\n' "You are currently on $(git rev-parse --abbrev-ref HEAD) branch of PokemonGo-Bot"
+		cd ..
+		if [[ $BOT_UPDATE -eq 1 ]]; then
+			printf '%s\n' " -> Your local bot is on commit: [$OLDBRANCH_BOT]"
+			printf '%s\n' " -> Newest commit on github is : [$HEAD_BOT]"
+		else
+			printf '%s\n' " -> This is the newest version"
+		fi
 	fi
 }
 
@@ -656,21 +658,23 @@ update_bot()
 
 check_for_updates_bot()
 {
-	move_to_dir
-	print_msg " - Checking for PokemonGo-Bot updates..."
-	local REPO_BOT="origin"
-	local OLDHEAD_BOT="$(git rev-parse HEAD)"
-	local CURBRANCH_BOT="$(git rev-parse --abbrev-ref HEAD)"
-	if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
-		git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
+	if [[ -d ./PokemonGo-Bot ]] ; then
+		move_to_dir
+		print_msg " - Checking for PokemonGo-Bot updates..."
+		local REPO_BOT="origin"
+		local OLDHEAD_BOT="$(git rev-parse HEAD)"
+		local CURBRANCH_BOT="$(git rev-parse --abbrev-ref HEAD)"
+		if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
+			git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
+		fi
+		git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
+		local HEAD_BOT="$(git rev-parse "$REPO_BOT/$CURBRANCH_BOT")"
+		if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
+			BOT_UPDATE=1
+		fi
+		print_done
+		cd ..
 	fi
-	git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
-	local HEAD_BOT="$(git rev-parse "$REPO_BOT/$CURBRANCH_BOT")"
-	if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
-		BOT_UPDATE=1
-	fi
-	print_done
-	cd ..
 }
 
 check_for_updates_wrapper()
