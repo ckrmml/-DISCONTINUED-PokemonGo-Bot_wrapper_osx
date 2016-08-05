@@ -101,7 +101,9 @@ rule()
 
 print_hu() 
 {
-	printf '%s\n' "You are currently on $CURBRANCH branch of PokemonGo-Bot"
+	cd PokemonGo-Bot
+	printf '%s\n' "You are currently on $(git rev-parse --abbrev-ref HEAD) branch of PokemonGo-Bot"
+	cd ..
 	if [[ $BOT_UPDATE -eq 1 ]]; then
 		printf '%s\n' " -> There is an update available"
 	else
@@ -192,12 +194,12 @@ display_menu()
 			print_command s "Start PokemonGo-Bot"
 			print_command w "Start web interface"
 			if [[ $BOT_UPDATE -eq 1 ]] ; then
-				print_command u "Update Bot"
+				print_command ub "Update Bot"
 			fi
 			print_msg_new ""
 			print_command r "Restart wrapper"
 			if [[ $WRAPPER_UPDATE -eq 1 ]] ; then
-				print_command w "Update wrapper"
+				print_command uw "Update wrapper"
 			fi
 		fi
 	fi
@@ -208,7 +210,7 @@ display_menu()
     case "$CHOICE" in
         i|I) branch_menu ;;
         s|S) start_menu ;;
-        u|U) update_bot ;;
+        ub|UB) update_bot ;;
         w|W) start_web ;;
         setup) 
 			move_to_dir
@@ -218,7 +220,7 @@ display_menu()
 			init_sub
 			cd ..
 			exec ./start.sh ;;
-		w|W) check_update ;;
+		uw|UW) check_update ;;
         r|R) exec ./start.sh ;;
         x|X) exit 0 ;;
     esac
