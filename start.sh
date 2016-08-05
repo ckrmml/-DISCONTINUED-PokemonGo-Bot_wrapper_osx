@@ -513,7 +513,7 @@ update_wrapper()
 			printf '%s\t%s\n' "WARNING: Your git version is lower than the required!"
 			printf '\t%s\n' "Your git version: $GITVERSION"
 			printf '\t%s\n' "Required git version: $NEEDEDGIT"
-			printf '\t%s\n' "Auto-update feature has been disabled, please update your git to latest version"
+			printf '\t%s\n' "Please update your git to latest version"
 			press_enter
 			return 0
 		fi
@@ -523,7 +523,6 @@ update_wrapper()
 			print_msg_new ""
 			print_msg_new ""
 			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
-			printf '\t%s\n' "Auto-update feature has been disabled"
 			press_enter
 			return 0
 		else
@@ -538,7 +537,6 @@ update_wrapper()
 			print_msg_new ""
 			print_msg_new ""
 			printf '%s\t%s\n' "WARNING: You're currently using $CURBRANCH branch, and this is not the default $GITHUBBRANCH branch."
-			printf '\t%s\n' "Auto-update feature has been disabled"
 			print_msg_new ""
 			press_enter
 			return 0
@@ -560,7 +558,7 @@ update_wrapper()
 			print_msg_new "" # Because git log doesn't finish with newline
 			print_msg_new "=========="
 			git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (echo; echo "WARNING: PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now. Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
-			print_msg_new "PokemonGo-Bot_wrapper_osx has been updated, it will now restart itself"
+			print_msg_new "PokemonGo-Bot_wrapper_osx has been updated."
 			press_enter
 			exec ./start.sh
 		else
@@ -586,7 +584,7 @@ update_bot()
 			printf '%s\t%s\n' "WARNING: Your git version is lower than the required!"
 			printf '\t%s\n' "Your git version: $GITVERSION"
 			printf '\t%s\n' "Required git version: $NEEDEDGIT"
-			printf '\t%s\n' "Auto-update feature has been disabled, please update your git to latest version"
+			printf '\t%s\n' "Please update your git to latest version"
 			press_enter
 			return 0
 		fi
@@ -596,7 +594,6 @@ update_bot()
 			print_msg_new ""
 			print_msg_new ""
 			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
-			printf '\t%s\n' "Auto-update feature has been disabled"
 			press_enter
 			return 0
 		else
@@ -625,9 +622,25 @@ update_bot()
 			print_msg_new "=========="
 			press_enter
 			git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (echo; echo "WARNING: PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now. Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
-			print_msg_new "PokemonGo-Bot_wrapper_osx has been updated, it will now restart itself"
+			print_msg_new "PokemonGo-Bot_wrapper_osx has been updated."
 			press_enter
-			exec ./start.sh
+			activate_virtualenv
+			printf '%s' " - Updating requirements..."	
+			pip install --upgrade -qr requirements.txt
+			OUT=$?
+			if [ $OUT -eq 0 ] ; then
+				print_done
+			else
+				print_fail
+				print_msg_new ""
+				print_msg_new "   Error code $OUT returned !! "
+				print_msg_new ""
+				print_msg_new " - Exiting..."
+				sleep 5
+				exit 1
+			fi
+			cd ..
+			exec ./start.sh		
 		else
 			print_msg_new ""
 			print_msg_new ""
@@ -635,25 +648,6 @@ update_bot()
 			sleep 1
 		fi
 	fi
-	
-	activate_virtualenv
-	
-	printf '%s' " - Updating requirements..."	
-	pip install --upgrade -qr requirements.txt
-	OUT=$?
-	if [ $OUT -eq 0 ] ; then
-		print_done
-	else
-		print_fail
-		print_msg_new ""
-		print_msg_new "   Error code $OUT returned !! "
-		print_msg_new ""
-		print_msg_new " - Exiting..."
-		sleep 5
-		exit 1
-	fi
-	cd ..
-	exec ./start.sh
 }
 
 check_for_updates_bot()
