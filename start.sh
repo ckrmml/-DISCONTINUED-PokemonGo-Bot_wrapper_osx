@@ -526,10 +526,8 @@ update_wrapper()
 		press_enter
 		exec ./start.sh
 	else
-		print_msg_newline ""
-		print_msg_newline ""
-		print_msg_newline "No new updates found"
-		sleep 1
+		no_update_found
+		exec ./start.sh
 	fi
 }
 
@@ -556,7 +554,7 @@ update_bot()
 		print_msg_newline "=========="
 		print_msg_newline ""
 		press_enter
-		git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT" >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO_BOT" "$GITHUBBRANCH"_BOT)
+		git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT" >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT")
 		print_msg_newline "PokemonGo-Bot has been updated."
 		press_enter
 		# update requirements after update
@@ -567,14 +565,19 @@ update_bot()
 		cd ..
 		exec ./start.sh
 	else
-		print_msg "[DONE]"
-		print_msg_newline ""
-		print_msg_newline ""
-		print_msg_newline "   No new updates found"
+		no_update_found		
 		cd ..
-		sleep 1
 		exec ./start.sh
 	fi
+}
+
+no_update_found()
+{
+	print_msg "[DONE]"
+	print_msg_newline ""
+	print_msg_newline ""
+	print_msg_newline "No new updates found"
+	sleep 1
 }
 
 check_for_updates_bot()
@@ -582,43 +585,29 @@ check_for_updates_bot()
 	if [[ -d ./PokemonGo-Bot ]] ; then
 		move_to_dir "PokemonGo-Bot"
 		print_msg " - Checking for PokemonGo-Bot updates..."
-		if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
-			print_msg_newline "[FAIL]"
-			print_msg_newline ""
-			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
-			print_msg_newline ""
-		else
-			if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
-				git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
-			fi
-			git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
-			if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
-				BOT_UPDATE=1
-			fi
-			print_msg_newline "[DONE]"
-			cd ..
+		if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
+			git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
 		fi
+		git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
+		if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
+			BOT_UPDATE=1
+		fi
+		print_msg_newline "[DONE]"
+		cd ..
 	fi
 }
 
 check_for_updates_wrapper()
 {
 	print_msg " - Checking for wrapper updates..."
-	if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
-		print_msg_newline "[FAIL]"
-		print_msg_newline ""
-		printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
-		print_msg_newline ""
-	else
-		if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
-			git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
-		fi
-		git fetch -q "$REPO" "$GITHUBBRANCH"
-		if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
-			WRAPPER_UPDATE=1
-		fi
-		done_or_fail
+	if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
+		git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
 	fi
+	git fetch -q "$REPO" "$GITHUBBRANCH"
+	if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
+		WRAPPER_UPDATE=1
+	fi
+	done_or_fail
 }
 
 # boot things
