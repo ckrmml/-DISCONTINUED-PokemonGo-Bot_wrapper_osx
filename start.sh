@@ -582,43 +582,29 @@ check_for_updates_bot()
 	if [[ -d ./PokemonGo-Bot ]] ; then
 		move_to_dir "PokemonGo-Bot"
 		print_msg " - Checking for PokemonGo-Bot updates..."
-		if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
-			print_msg_newline "[FAIL]"
-			print_msg_newline ""
-			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
-			print_msg_newline ""
-		else
-			if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
-				git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
-			fi
-			git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
-			if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
-				BOT_UPDATE=1
-			fi
-			print_msg_newline "[DONE]"
-			cd ..
+		if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
+			git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
 		fi
+		git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
+		if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
+			BOT_UPDATE=1
+		fi
+		print_msg_newline "[DONE]"
+		cd ..
 	fi
 }
 
 check_for_updates_wrapper()
 {
 	print_msg " - Checking for wrapper updates..."
-	if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
-		print_msg_newline "[FAIL]"
-		print_msg_newline ""
-		printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
-		print_msg_newline ""
-	else
-		if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
-			git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
-		fi
-		git fetch -q "$REPO" "$GITHUBBRANCH"
-		if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
-			WRAPPER_UPDATE=1
-		fi
-		done_or_fail
+	if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
+		git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
 	fi
+	git fetch -q "$REPO" "$GITHUBBRANCH"
+	if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
+		WRAPPER_UPDATE=1
+	fi
+	done_or_fail
 }
 
 # boot things
