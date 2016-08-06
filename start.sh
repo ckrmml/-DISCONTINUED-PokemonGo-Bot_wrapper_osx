@@ -526,10 +526,8 @@ update_wrapper()
 		press_enter
 		exec ./start.sh
 	else
-		print_msg_newline ""
-		print_msg_newline ""
-		print_msg_newline "No new updates found"
-		sleep 1
+		no_update_found
+		exec ./start.sh
 	fi
 }
 
@@ -556,7 +554,7 @@ update_bot()
 		print_msg_newline "=========="
 		print_msg_newline ""
 		press_enter
-		git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT" >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO_BOT" "$GITHUBBRANCH"_BOT)
+		git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT" >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT")
 		print_msg_newline "PokemonGo-Bot has been updated."
 		press_enter
 		# update requirements after update
@@ -567,14 +565,19 @@ update_bot()
 		cd ..
 		exec ./start.sh
 	else
-		print_msg "[DONE]"
-		print_msg_newline ""
-		print_msg_newline ""
-		print_msg_newline "   No new updates found"
+		no_update_found		
 		cd ..
-		sleep 1
 		exec ./start.sh
 	fi
+}
+
+no_update_found()
+{
+	print_msg "[DONE]"
+	print_msg_newline ""
+	print_msg_newline ""
+	print_msg_newline "No new updates found"
+	sleep 1
 }
 
 check_for_updates_bot()
