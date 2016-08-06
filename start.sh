@@ -4,52 +4,99 @@
 #
 #
 #
-
+# set -x
 # PokemonGo-Bot variables
 export BRANCH="" # dev or master
 export ACTIVE_CONFIG="" # account to start
-export GITHUBLINK_BOT="https://github.com/PokemonGoF/PokemonGo-Bot.git"
 
-# PokemonGo-Bot wrapper scrip variables
+# git variables wrapper
 export GITHUBLINK="https://github.com/ckrmml/PokemonGo-Bot_wrapper_osx.git"
 export GITHUBBRANCH="master"
-export NEEDEDGIT="1.8"
+export REPO="origin"
+export OLDHEAD=""
+export CURBRANCH=""
+export HEAD=""
+
+# git variables bot
+export GITHUBLINK_BOT="https://github.com/PokemonGoF/PokemonGo-Bot.git"
+export REPO_BOT="origin"
+export OLDHEAD_BOT=""
+export CURBRANCH_BOT=""
+export HEAD_BOT=""
+
+# PokemonGo-Bot wrapper scrip variables
 export CLONE_OR_COPY=0
 export BOT_UPDATE=0
 export WRAPPER_UPDATE=0
 
-# check for requirements
-TOOLS=(python pip git virtualenv brew)
-if [[ "$(which "${TOOLS[@]}" >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then
-    MISSINGTOOLS=""
-    for TOOL in "${TOOLS[@]}"; do
-        if [[ -z "$(which $TOOL)" ]]; then
-            MISSINGTOOLS+=" $TOOL"
-        fi
-    done
-    printf "\n"
-    printf '%s\t%s\n' "Error:"  "It looks like you don't have the required tool(s): "
-    printf "\n"
-    printf '\t%s\n' "$MISSINGTOOLS"
-    printf "\n"
-    printf '\t%s\n' "This check was made through 'which' command"
-    printf '\t%s\n' "Please install missing tool(s) and relaunch"
-    printf "\n"
-    exit 1 
-fi
-printf "\n"
+# variable variables
+export CONNECTION=0
 
-# check for clone or copy
-if [[ -d ./PokemonGo-Bot ]] ; then
-	if [[ -f clone ]] ; then
-		CLONE_OR_COPY=1
-	else
-		touch copy
+# populate variables on start-up
+populate_variables()
+{
+	if [[ -d ./PokemonGo-Bot ]] ; then
+		move_to_dir "PokemonGo-Bot"
+		print_msg " - Populating bot specific variables..."
+		OLDHEAD_BOT="$(git rev-parse HEAD)"
+		CURBRANCH_BOT="$(git rev-parse --abbrev-ref HEAD)"
+		HEAD_BOT="$(git rev-parse "$REPO_BOT/$CURBRANCH_BOT")"
+		print_msg_newline "[DONE]"
+		cd ..
+		if [[ -f clone ]] ; then
+			CLONE_OR_COPY=1
+		else
+			CLONE_OR_COPY=2
+		fi
 	fi
-fi
-if [[ -f copy ]] ; then
-	CLONE_OR_COPY=2
-fi
+	print_msg " - Populating wrapper specific variables..."
+	OLDHEAD="$(git rev-parse HEAD)"
+	CURBRANCH="$(git rev-parse --abbrev-ref HEAD)"
+	HEAD="$(git rev-parse "$REPO/$GITHUBBRANCH")"
+	print_msg_newline "[DONE]"
+}
+
+# error message
+done_or_fail()
+{
+	OUT=$?
+	if [[ $OUT -eq 0 ]] ; then
+		print_msg_newline "[DONE]"
+	else
+		print_msg_newline "[FAIL]"
+		print_msg_newline ""
+		print_msg_newline "   Error code $OUT returned !! "
+		print_msg_newline ""
+		print_msg_newline " - Exiting..."
+		sleep 5
+		exit 1
+	fi
+}	
+
+# requirement checks
+check_req()
+{
+	print_msg " - Checking for PokemonGo-Bot requirements..."
+	TOOLS=(python pip git virtualenv brew) 
+	if [[ "$(which "${TOOLS[@]}" >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then
+	    MISSINGTOOLS=""
+	    for TOOL in "${TOOLS[@]}"; do
+	        if [[ -z "$(which $TOOL)" ]]; then
+   	         MISSINGTOOLS+="$TOOL "
+   	     fi
+   		done
+    	printf "\n"
+    	printf '%s\t%s\n' "Error:" "It looks like you don't have the required tool(s): "
+		printf "\n"
+    	printf '\t%s\n' "$MISSINGTOOLS"
+    	printf "\n"
+    	printf '\t%s\n' "This check was made through 'which' command"
+    	printf '\t%s\n' "Please install missing tool(s) and relaunch depTREE"
+    	printf "\n"
+    	exit 1 
+	fi
+	print_msg_newline "[DONE]"
+}
 
 # text messages etc pp
 press_enter()
@@ -63,20 +110,10 @@ print_msg()
     printf '%s' "$text"
 }
 
-print_msg_new() 
+print_msg_newline() 
 {
     text=$1
     printf '%s\n' "$text"
-}
-
-print_done()
-{
-	printf '%s\n' "[DONE]"
-}
-
-print_fail()
-{
-	printf '%s\n' "[FAILED]"
 }
 
 print_command() 
@@ -91,7 +128,7 @@ rule()
 	printf -v _hr "%*s" $(tput cols) && echo ${_hr// /${1--}}
 }
 
- print_banner()
+print_banner()
 {
 	text=$1
 	rule
@@ -101,21 +138,14 @@ rule()
 
 move_to_dir()
 {
-	print_msg " - Moving to bot directory..."
-	cd ./PokemonGo-Bot
-	print_done
+	dir=$1
+	cd "$dir"
 }
 
 print_hu() 
 {
 	if [[ -d ./PokemonGo-Bot ]] ; then
-		cd PokemonGo-Bot
-		local REPO_BOT="origin"
-		local CURBRANCH_BOT="$(git rev-parse --abbrev-ref HEAD)"
-		local OLDBRANCH_BOT="$(git rev-parse HEAD)"
-		local HEAD_BOT="$(git rev-parse "$REPO_BOT/$CURBRANCH_BOT")"
-		printf '%s\n' "You are currently on $(git rev-parse --abbrev-ref HEAD) branch of PokemonGo-Bot"
-		cd ..
+		printf '%s\n' "You are currently on ["$CURBRANCH_BOT"] branch of PokemonGo-Bot"
 		if [[ $BOT_UPDATE -eq 1 ]]; then
 			printf '%s\n' " -> Your local bot is on commit: [$OLDBRANCH_BOT]"
 			printf '%s\n' " -> Newest commit on github is : [$HEAD_BOT]"
@@ -141,34 +171,34 @@ display_menu()
 	fi
 	if [[ -d ./PokemonGo-Bot ]] && [[ "$CLONE_OR_COPY" -eq 1 ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
-			print_msg_new ""
+			print_msg_newline ""
 			printf '\t%s\n' "Please go to "
-			print_msg_new ""
+			print_msg_newline ""
 			printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
-			print_msg_new ""
+			print_msg_newline ""
 			printf '\t%s\n' "and create a configuration file to continue."
 			printf '\t%s\n' "After you have done this, please enter 'r' "
 			printf '\t%s\n' "or 'R' as choice or restart the wrapper."
-			print_msg_new ""
+			print_msg_newline ""
 			rule
 		fi
 	elif [[ -d ./PokemonGo-Bot ]] && [[ "$CLONE_OR_COPY" -eq 2 ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
-			print_msg_new ""
+			print_msg_newline ""
 			printf '\t%s\n' "Please go to "
-			print_msg_new ""
+			print_msg_newline ""
 			printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
-			print_msg_new ""
+			print_msg_newline ""
 			printf '\t%s\n' "and create a configuration file to continue."
 			printf '\t%s\n' "After you have done this, please enter 'r' "
 			printf '\t%s\n' "or 'R' as choice or restart the wrapper."
-			print_msg_new ""
+			print_msg_newline ""
 			rule
 		else
-			print_msg_new ""
+			print_msg_newline ""
 			printf '\t%s\n' "It looks like you copied over an instance of the bot you had installed before."
 			printf '\t%s\n' "If starting a bot does not work, try entering setup as choice."
-			print_msg_new ""
+			print_msg_newline ""
 			rule
 		fi
 	fi
@@ -177,16 +207,16 @@ display_menu()
 			print_command s "Start PokemonGo-Bot"
 			print_command w "Start web interface"
 			if [[ $BOT_UPDATE -eq 1 ]] ; then
-				print_msg_new ""
+				print_msg_newline ""
 				print_command ub "Update Bot"
 			fi
 			if [[ $WRAPPER_UPDATE -eq 1 ]] ; then
 				if [[ $BOT_UPDATE -eq 0 ]] ; then
-					print_msg_new ""
+					print_msg_newline ""
 				fi
 				print_command uw "Update wrapper"
 			fi
-			print_msg_new ""
+			print_msg_newline ""
 			print_command r "Restart wrapper"
 		fi
 	fi
@@ -197,9 +227,9 @@ display_menu()
         i|I) branch_menu ;;
         s|S) start_menu ;;
         ub|UB) update_bot ;;
-        w|W) start_web ;;
+        w|W) start_web_file ;;
         setup) 
-			move_to_dir
+			move_to_dir "PokemonGo-Bot"
 			setup_virtualenv
 			activate_virtualenv
 			install_req
@@ -216,12 +246,12 @@ branch_menu()
 {
 	clear
 	print_banner "PokemonGo-Bot Wrapper OSX"
-	print_msg_new ""
+	print_msg_newline ""
 	print_command m "Choose master branch"
 	print_command d "Choose dev branch"
-	print_msg_new ""
+	print_msg_newline ""
 	print_command x "Return"
-	print_msg_new ""
+	print_msg_newline ""
 	read -p "Please choose: " CHOICE
     case "$CHOICE" in
         m|M) BRANCH=master 
@@ -238,19 +268,19 @@ start_menu()
     local COUNT=0
     file_list=()
 	print_banner "Start bot(s)"
-    print_msg_new "Searching for configuration files you've created in the past..."
-    print_msg_new "=-=-=-=-=-=-=-=-=-==-=-=-="
+    print_msg_newline "Searching for configuration files you've created in the past..."
+    print_msg_newline "=-=-=-=-=-=-=-=-=-==-=-=-="
  	while IFS= read -d $'\0' -r file ; do     
  		((COUNT++))
 		file_list=("${file_list[@]}" "$file")
  	done < <(find ./PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -maxdepth 1 -print0) # Avoid a subshell, because we must remember variables
 	printf '%s\n' "$(basename "${file_list[@]}")"
-    print_msg_new "=-=-=-=-=-=-=-=-=-==-=-=-="
-    print_msg_new "$COUNT config files were found"
-	print_msg_new ""
+    print_msg_newline "=-=-=-=-=-=-=-=-=-==-=-=-="
+    print_msg_newline "$COUNT config files were found"
+	print_msg_newline ""
     if [[ "$COUNT" -eq 1 ]]; then
         ACTIVE_CONFIG="$(basename "$LASTFOUND")" # If we have only one config file, there's nothing to choose from, so we can save some precious seconds
-        start_bot
+        start_bot_file
     fi
     read -p "Please choose (x to return): " CHOICE
     case "$CHOICE" in
@@ -260,9 +290,9 @@ start_menu()
 		for config in $CHOICE ; do
         	if [[ -f "./PokemonGo-Bot/configs/$config" ]] ; then
             	ACTIVE_CONFIG="$config"
-            	start_bot
+            	start_bot_file
 			else
-            	print_msg_new "Invalid selection"
+            	print_msg_newline "Invalid selection"
 				press_enter        	
 			fi
         done
@@ -287,18 +317,18 @@ clone_bot_git()
 	OUT=$?
 	if [ $OUT -eq 0 ] ; then
 	touch clone
-	print_done
+	print_msg_newline "[DONE]"
 	else
-		print_fail
-		print_msg_new ""
-		print_msg_new "   Error code $OUT returned !! "
-		print_msg_new ""
+		print_msg_newline "[FAIL]"
+		print_msg_newline ""
+		print_msg_newline "   Error code $OUT returned !! "
+		print_msg_newline ""
 		case $OUT in
-			128) print_msg_new "This means the directory already exists." ;;
-			*) print_msg_new "This error is unknown" ;;
+			128) print_msg_newline "This means the directory already exists." ;;
+			*) print_msg_newline "This error is unknown" ;;
 		esac
-		print_msg_new ""
-		print_msg_new " - Exiting..."
+		print_msg_newline ""
+		print_msg_newline " - Exiting..."
 		sleep 5
 		exit 1
 	fi
@@ -306,110 +336,48 @@ clone_bot_git()
 
 setup_virtualenv()
 {
-	printf '%s' " - Setting up Python virtualenv..."
-	virtualenv -q .
-	OUT=$?
-	if [ $OUT -eq 0 ] ; then
-		print_done
-	else
-		print_fail
-		print_msg_new ""
-		print_msg_new "   Error code $OUT returned !! "
-		print_msg_new ""
-		print_msg_new " - Exiting..."
-		sleep 5
-		exit 1
-	fi
+	print_msg " - Setting up Python virtualenv..."
+	virtualenv -q . 2>/dev/null
+	done_or_fail
 }
 
 activate_virtualenv()
 {
-	printf '%s' " - Activating Python virtualenv..."
-	source bin/activate
-	OUT=$?
-	if [ $OUT -eq 0 ] ; then
-		print_done
-	else
-		print_fail
-		print_msg_new ""
-		print_msg_new "   Error code $OUT returned !! "
-		print_msg_new ""
-		print_msg_new " - Exiting..."
-		sleep 5
-		exit 1
-	fi
+	print_msg " - Activating Python virtualenv..."
+	source bin/activate 2>/dev/null
+	done_or_fail
 }
 
 install_req()
 {
-	printf '%s' " - Install requirements..."
-	pip install -qr requirements.txt
-	OUT=$?
-	if [ $OUT -eq 0 ] ; then
-		print_done
-	else
-		print_fail
-		print_msg_new ""
-		print_msg_new "   Error code $OUT returned !! "
-		print_msg_new ""
-		print_msg_new " - Exiting..."
-		sleep 5
-		exit 1
-	fi
+	print_msg " - Install requirements..."
+	pip install -qr requirements.txt 2>/dev/null
+	done_or_fail
+}
+
+update_req()
+{
+	print_msg " - Updating requirements..."	
+	pip install --upgrade -qr requirements.txt 2>/dev/null
+	done_or_fail
 }
 
 init_sub()
 {
-	printf '%s' " - Moving to submodule dir..."
-	cd ./web
-	OUT=$?
-	if [ $OUT -eq 0 ] ; then
-		print_done
-	else
-		print_fail
-		print_msg_new ""
-		print_msg_new "   Error code $OUT returned !! "
-		print_msg_new ""
-		print_msg_new " - Exiting..."
-		sleep 5
-		exit 1
-	fi
-	
-	printf '%s' " - Initializing submodule..."
-	git submodule -q init && cd ..
-	OUT=$?
-	if [ $OUT -eq 0 ] ; then
-		print_done
-	else
-		print_fail
-		print_msg_new ""
-		print_msg_new "   Error code $OUT returned !! "
-		print_msg_new ""
-		print_msg_new " - Exiting..."
-		sleep 5
-		exit 1
-	fi
-	
-	printf '%s' " - Updating submodule..."
-	git submodule -q update
-	OUT=$?
-	if [ $OUT -eq 0 ] ; then
-		print_done
-	else
-		print_fail
-		print_msg_new ""
-		print_msg_new "   Error code $OUT returned !! "
-		print_msg_new ""
-		print_msg_new " - Exiting..."
-		sleep 5
-		exit 1
-	fi
+	cd ./web 	
+	print_msg " - Initializing submodule..."
+	git submodule -q init 2>/dev/null
+	done_or_fail
+	cd ..	
+	print_msg " - Updating submodule..."
+	git submodule -q update 2>/dev/null
+	done_or_fail
 }
 
 install_bot()
 {
 	clone_bot_git $BRANCH
-	move_to_dir
+	move_to_dir "PokemonGo-Bot"
 	setup_virtualenv
 	activate_virtualenv
 	install_req
@@ -425,77 +393,83 @@ batch_start()
         if [[ -f "$line" ]] ; then
  			CHOICE="$(basename "$line")"
            	ACTIVE_CONFIG="$CHOICE"
-            start_bot
+            start_bot_file
         fi
     done < <(find ./PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -maxdepth 1)
 }
 
-start_bot() 
+start_bot_file() 
 {
+	clear
+	print_banner "Writing and executing bot start command file"
     TMP_FILE="$ACTIVE_CONFIG.command"
-
+	print_msg " - Read and copy template file..."
 	while read line ; do
 		echo "$line" >> $TMP_FILE
 	done < command_template
-	
+	done_or_fail
+	print_msg " - Copying over routines..."
 	# Copy over vars
 	echo "export ACTIVE_CONFIG="$ACTIVE_CONFIG"" >> $TMP_FILE
 	echo "" >> $TMP_FILE
-
     # Change to directory
     echo "cd $(pwd)" >> $TMP_FILE
 	echo "" >> $TMP_FILE
-		
     # Copy over while loop
-	echo "print_msg_new \"\"" >> $TMP_FILE
-	echo "move_to_dir" >> $TMP_FILE
+	echo "print_msg_newline \"\"" >> $TMP_FILE
+	echo "move_to_dir "PokemonGo-Bot"" >> $TMP_FILE
 	echo "activate_virtualenv" >> $TMP_FILE
-	echo "print_msg_new \" - Executing PokemonGo-Bot with config $ACTIVE_CONFIG...\"" >> $TMP_FILE
-	echo "print_msg_new \"\"" >> $TMP_FILE
+	echo "print_msg_newline \" - Executing PokemonGo-Bot with config $ACTIVE_CONFIG...\"" >> $TMP_FILE
+	echo "print_msg_newline \"\"" >> $TMP_FILE
 	echo "while true ; do" >> $TMP_FILE
 	echo "	./pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_FILE
-	echo "	print_msg_new \"\"" >> $TMP_FILE
-	echo "	print_msg_new \" - PokemonGo-Bot exited...\"" >> $TMP_FILE
-	echo "	print_msg_new \" - Restarting in five seconds...\"" >> $TMP_FILE
-	echo "print_msg_new \"\"" >> $TMP_FILE
+	echo "	print_msg_newline \"\"" >> $TMP_FILE
+	echo "	print_msg_newline \" - PokemonGo-Bot exited...\"" >> $TMP_FILE
+	echo "	print_msg_newline \" - Restarting in five seconds...\"" >> $TMP_FILE
+	echo "print_msg_newline \"\"" >> $TMP_FILE
 	echo "	sleep 5;" >> $TMP_FILE
 	echo "done" >> $TMP_FILE
-	
+	done_or_fail
+	print_msg " - Executing bot start command file..."
     chmod +x "$TMP_FILE"
     open -b com.apple.terminal "$TMP_FILE"
-    
-    sleep 2
+    done_or_fail
+    sleep 3
+    print_msg " - Deleting bot start command file..."
     rm -f ./*.command
+    done_or_fail
 }
 
-start_web()
+start_web_file()
 {
+	clear
+	print_banner "Writing and executing web interface start command file"
 	TMP_FILE="web.command"
-	
+	print_msg " - Copying over routines..."
     # Change to directory
     echo "cd $(pwd)/PokemonGo-Bot/web" >> $TMP_FILE
-	echo "" >> $TMP_FILE
-		
+	echo "" >> $TMP_FILE		
     # Copy over while loop
 	echo "while true ; do" >> $TMP_FILE
 	echo "	python -m SimpleHTTPServer" >> $TMP_FILE
-	echo "print_msg_new \"\"" >> $TMP_FILE
-	echo "	print_msg_new \" - Restarting in five seconds...\"" >> $TMP_FILE
-	echo "print_msg_new \"\"" >> $TMP_FILE
+	echo "print_msg_newline \"\"" >> $TMP_FILE
+	echo "	print_msg_newline \" - Restarting in five seconds...\"" >> $TMP_FILE
+	echo "print_msg_newline \"\"" >> $TMP_FILE
 	echo "	sleep 5;" >> $TMP_FILE
-	echo "done" >> $TMP_FILE
-	
+	echo "done" >> $TMP_FILE	
     chmod +x "$TMP_FILE"
-    open -b com.apple.terminal "$TMP_FILE"
-    
-    sleep 5
-    rm -f ./*.command
-    
-    print_msg_new "Open your browser and visit the site:"
-    print_msg_new "http://localhost:8000"
-    print_msg_new "to view the map"
-    sleep 5
-    
+    done_or_fail
+	print_msg "Executing web interface start command file..."    
+    open -b com.apple.terminal "$TMP_FILE"    
+    done_or_fail
+    sleep 3
+    print_msg "Deleting bot start command file..."
+    rm -f ./*.command    
+    done_or_fail
+    print_msg_newline "Open your browser and visit the site:"
+    print_msg_newline "http://localhost:8000"
+    print_msg_newline "to view the map"
+    sleep 5    
     exec ./start.sh
 }
 
@@ -503,189 +477,129 @@ start_web()
 update_wrapper() 
 {
 	clear
-	if [[ -d ".git" && ! -z "$(which git)" ]]; then
-		print_banner "Wrapper-update in progress"
-		print_msg " - Checking git version..."
-		local GITVERSION="$(git --version | cut -d' ' -f3)"
-		if version_less_than "$GITVERSION" "$NEEDEDGIT"; then
-			print_msg_new ""
-			print_msg_new ""
-			printf '%s\t%s\n' "WARNING: Your git version is lower than the required!"
-			printf '\t%s\n' "Your git version: $GITVERSION"
-			printf '\t%s\n' "Required git version: $NEEDEDGIT"
-			printf '\t%s\n' "Please update your git to latest version"
-			press_enter
-			return 0
-		fi
-		print_done
-		print_msg " - Checking network connection..."
-		if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
-			print_msg_new ""
-			print_msg_new ""
-			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
-			press_enter
-			return 0
-		else
-			print_done
-		fi
-		
-		local REPO="origin"
-		local OLDHEAD="$(git rev-parse HEAD)"
-		local CURBRANCH="$(git rev-parse --abbrev-ref HEAD)"
-		print_msg " - Checking branch..."
-		if [[ "$CURBRANCH" != "$GITHUBBRANCH" ]]; then
-			print_msg_new ""
-			print_msg_new ""
-			printf '%s\t%s\n' "WARNING: You're currently using $CURBRANCH branch, and this is not the default $GITHUBBRANCH branch."
-			print_msg_new ""
-			press_enter
-			return 0
-		fi
-		print_done
-		if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
-			git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
-		fi
-		print_msg " - Fetching current version..."
-		git fetch -q "$REPO" "$GITHUBBRANCH"
-		local HEAD="$(git rev-parse "$REPO/$GITHUBBRANCH")"
-		if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
-			print_msg_new ""
-			print_msg_new ""
-			print_msg_new "Found new version!"
-			print_msg_new "Changelog:"
-			print_msg_new "=========="
-			git --no-pager log --abbrev-commit --decorate --date=relative --pretty=format:'%C(bold red)%h%Creset %C(bold green)(%cr)%Creset - %C(bold yellow)%s%Creset %C(bold blue)commited by%Creset %C(bold cyan)%an%Creset' "$OLDHEAD..$HEAD"
-			print_msg_new "" # Because git log doesn't finish with newline
-			print_msg_new "=========="
-			git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (echo; echo "WARNING: PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now. Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
-			print_msg_new "PokemonGo-Bot_wrapper_osx has been updated."
-			press_enter
-			exec ./start.sh
-		else
-			print_msg_new ""
-			print_msg_new ""
-			print_msg_new "No new updates found"
-			sleep 1
-		fi
+	print_banner "Updating PokemonGo-Bot wrapper in progress"
+	print_msg " - Checking branch..."
+	if [[ "$CURBRANCH" != "$GITHUBBRANCH" ]]; then
+		print_msg_newline ""
+		print_msg_newline ""
+		printf '%s\t%s\n' "WARNING: You're currently using $CURBRANCH branch, and this is not the default $GITHUBBRANCH branch."
+		print_msg_newline ""
+		press_enter
+		return 0
+	fi
+	print_msg_newline "[DONE]"
+	if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
+		git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
+	fi
+	print_msg " - Fetching current version..."
+	git fetch -q "$REPO" "$GITHUBBRANCH"
+	if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
+		print_msg_newline ""
+		print_msg_newline ""
+		print_msg_newline "Found new version!"
+		print_msg_newline "Changelog:"
+		print_msg_newline "=========="
+		git --no-pager log --abbrev-commit --decorate --date=relative --pretty=format:'%C(bold red)%h%Creset %C(bold green)(%cr)%Creset - %C(bold yellow)%s%Creset %C(bold blue)commited by%Creset %C(bold cyan)%an%Creset' "$OLDHEAD..$HEAD"
+		print_msg_newline "" # Because git log doesn't finish with newline
+		print_msg_newline "=========="
+		git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
+		print_msg_newline "PokemonGo-Bot_wrapper_osx has been updated."
+		press_enter
+		exec ./start.sh
+	else
+		print_msg_newline ""
+		print_msg_newline ""
+		print_msg_newline "No new updates found"
+		sleep 1
 	fi
 }
 
 update_bot() 
 {
 	clear
-	if [[ -d ".git" && ! -z "$(which git)" ]]; then
-		print_banner "PokemonGo-Bot in progress"
-		move_to_dir
-		print_msg " - Checking git version..."
-		local GITVERSION="$(git --version | cut -d' ' -f3)"
-		if version_less_than "$GITVERSION" "$NEEDEDGIT"; then
-			print_msg_new ""
-			print_msg_new ""
-			printf '%s\t%s\n' "WARNING: Your git version is lower than the required!"
-			printf '\t%s\n' "Your git version: $GITVERSION"
-			printf '\t%s\n' "Required git version: $NEEDEDGIT"
-			printf '\t%s\n' "Please update your git to latest version"
-			press_enter
-			return 0
-		fi
-		print_done
-		print_msg " - Checking network connection..."
-		if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
-			print_msg_new ""
-			print_msg_new ""
-			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
-			press_enter
-			return 0
-		else
-			print_done
-		fi
-		
-		local REPO="origin"
-		local OLDHEAD="$(git rev-parse HEAD)"
-		local CURBRANCH="$(git rev-parse --abbrev-ref HEAD)"
-		print_msg " - Checking branch..."
-		print_done
-		if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
-			git remote add -t "$CURBRANCH" -m "$CURBRANCH" "$REPO" "$GITHUBLINK_BOT"
-		fi
-		print_msg " - Fetching current version..."
-		git fetch -q "$REPO" "$CURBRANCH"
-		local HEAD="$(git rev-parse "$REPO/$CURBRANCH")"
-		if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
-			print_msg_new ""
-			print_msg_new ""
-			print_msg_new "Found new version!"
-			print_msg_new "Changelog:"
-			print_msg_new "=========="
-			git --no-pager log --abbrev-commit --decorate --date=relative --pretty=format:'%C(bold red)%h%Creset %C(bold green)(%cr)%Creset - %C(bold yellow)%s%Creset %C(bold blue)commited by%Creset %C(bold cyan)%an%Creset' "$OLDHEAD..$HEAD"
-			print_msg_new "" # Because git log doesn't finish with newline
-			print_msg_new "=========="
-			press_enter
-			git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (echo; echo "WARNING: PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now. Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
-			print_msg_new "PokemonGo-Bot_wrapper_osx has been updated."
-			press_enter
-			activate_virtualenv
-			printf '%s' " - Updating requirements..."	
-			pip install --upgrade -qr requirements.txt
-			OUT=$?
-			if [ $OUT -eq 0 ] ; then
-				print_done
-			else
-				print_fail
-				print_msg_new ""
-				print_msg_new "   Error code $OUT returned !! "
-				print_msg_new ""
-				print_msg_new " - Exiting..."
-				sleep 5
-				exit 1
-			fi
-			cd ..
-			exec ./start.sh		
-		else
-			print_msg_new ""
-			print_msg_new ""
-			print_msg_new "No new updates found"
-			sleep 1
-		fi
+	print_banner "Updating PokemonGo-Bot in progress"
+	move_to_dir "PokemonGo-Bot"
+	print_msg " - Checking branch..."
+	if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
+		git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
+	fi
+	done_or_fail
+	print_msg " - Fetching current version..."
+	git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
+	if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
+		print_msg_newline ""
+		print_msg_newline ""
+		print_msg_newline "Found new version!"
+		print_msg_newline "Changelog:"
+		print_msg_newline "=========="
+		git --no-pager log --abbrev-commit --decorate --date=relative --pretty=format:'%C(bold red)%h%Creset %C(bold green)(%cr)%Creset - %C(bold yellow)%s%Creset %C(bold blue)commited by%Creset %C(bold cyan)%an%Creset' "$OLDHEAD_BOT..$HEAD_BOT"
+		print_msg_newline "" # Because git log doesn't finish with newline
+		print_msg_newline "=========="
+		print_msg_newline ""
+		press_enter
+		git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT" >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO_BOT" "$GITHUBBRANCH"_BOT)
+		print_msg_newline "PokemonGo-Bot has been updated."
+		press_enter
+		# update requirements after update
+		move_to_dir "PokemonGo-Bot"
+		activate_virtualenv
+		update_req
+		init_sub
+		cd ..
+		exec ./start.sh
+	else
+		print_msg "[DONE]"
+		print_msg_newline ""
+		print_msg_newline ""
+		print_msg_newline "   No new updates found"
+		cd ..
+		sleep 1
+		exec ./start.sh
 	fi
 }
 
 check_for_updates_bot()
 {
 	if [[ -d ./PokemonGo-Bot ]] ; then
-		move_to_dir
+		move_to_dir "PokemonGo-Bot"
 		print_msg " - Checking for PokemonGo-Bot updates..."
-		local REPO_BOT="origin"
-		local OLDHEAD_BOT="$(git rev-parse HEAD)"
-		local CURBRANCH_BOT="$(git rev-parse --abbrev-ref HEAD)"
-		if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
-			git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
+		if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
+			print_msg_newline "[FAIL]"
+			print_msg_newline ""
+			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
+			print_msg_newline ""
+		else
+			if [[ "$(git remote | grep -qi "$REPO_BOT"; echo $?)" -ne 0 ]]; then
+				git remote add -t "$CURBRANCH_BOT" -m "$CURBRANCH_BOT" "$REPO_BOT" "$GITHUBLINK_BOT"
+			fi
+			git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
+			if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
+				BOT_UPDATE=1
+			fi
+			print_msg_newline "[DONE]"
+			cd ..
 		fi
-		git fetch -q "$REPO_BOT" "$CURBRANCH_BOT"
-		local HEAD_BOT="$(git rev-parse "$REPO_BOT/$CURBRANCH_BOT")"
-		if [[ ! -z "$HEAD_BOT" && "$OLDHEAD_BOT" != "$HEAD_BOT" ]]; then
-			BOT_UPDATE=1
-		fi
-		print_done
-		cd ..
 	fi
 }
 
 check_for_updates_wrapper()
 {
 	print_msg " - Checking for wrapper updates..."
-	local REPO="origin"
-	local OLDHEAD="$(git rev-parse HEAD)"
-	local CURBRANCH="$(git rev-parse --abbrev-ref HEAD)"
-	if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
-		git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
+	if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
+		print_msg_newline "[FAIL]"
+		print_msg_newline ""
+		printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
+		print_msg_newline ""
+	else
+		if [[ "$(git remote | grep -qi "$REPO"; echo $?)" -ne 0 ]]; then
+			git remote add -t "$GITHUBBRANCH" -m "$GITHUBBRANCH" "$REPO" "$GITHUBLINK"
+		fi
+		git fetch -q "$REPO" "$GITHUBBRANCH"
+		if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
+			WRAPPER_UPDATE=1
+		fi
+		done_or_fail
 	fi
-	git fetch -q "$REPO" "$GITHUBBRANCH"
-	local HEAD="$(git rev-parse "$REPO/$GITHUBBRANCH")"
-	if [[ ! -z "$HEAD" && "$OLDHEAD" != "$HEAD" ]]; then
-		WRAPPER_UPDATE=1
-	fi
-	print_done
 }
 
 version_less_than() {
@@ -699,11 +613,32 @@ version_less_than() {
 	fi
 }
 
+check_connection()
+{
+	if [[ -d ".git" && ! -z "$(which git)" ]]; then
+		print_msg " - Checking network connection..."
+		if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
+			print_msg_newline ""
+			print_msg_newline ""
+			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
+			press_enter
+			return 0
+		else
+			print_msg_newline "[DONE]"
+			CONNECTION=1
+		fi
+	fi
+}
+
 # boot things
 clear
-print_banner "Checking for bot and wrapper updates"
-check_for_updates_wrapper
+print_banner "Start-up checks"
+check_req
+populate_variables
 check_for_updates_bot
+check_for_updates_wrapper
+print_msg_newline ""
+print_msg_newline "   Checks complete"
 # core app
 while true ; do
 	display_menu

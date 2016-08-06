@@ -5,7 +5,7 @@
 # and the command will be executed afterwards. This should
 # enable us running as many bots as wanted.
 
-print_msg_new()
+print_msg_newline()
 {
 	text=$1
 	printf '%s\\n' "$text"
@@ -17,21 +17,10 @@ print_msg()
 	printf '%s' "$text"
 }
 
-print_done()
-{
-	printf '%s\\n' "[DONE]"
-}
-
-print_fail()
-{
-	printf '%s\\n' "[FAILED]"
-}
-
 move_to_dir()
 {
-	print_msg " - Moving to bot directory..."
-	cd ./PokemonGo-Bot
-	print_done
+	dir=$1
+	cd "$dir"
 }
 
 setup_virtualenv()
@@ -40,9 +29,9 @@ setup_virtualenv()
 	virtualenv -q .
 	OUT=$?
 	if [ $OUT -eq 0 ] ; then
-		print_done
+		print_msg_newline "[DONE]"
 	else
-		print_fail
+		print_msg_newline "[FAIL]"
 		print_msg_new ""
 		print_msg_new "   Error code $OUT returned !! "
 		print_msg_new ""
@@ -58,9 +47,9 @@ activate_virtualenv()
 	source bin/activate
 	OUT=$?
 	if [ $OUT -eq 0 ] ; then
-		print_done
+		print_msg_newline "[DONE]"
 	else
-		print_fail
+		print_msg_newline "[FAIL]"
 		print_msg_new ""
 		print_msg_new "   Error code $OUT returned !! "
 		print_msg_new ""
