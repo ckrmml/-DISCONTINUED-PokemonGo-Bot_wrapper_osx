@@ -147,11 +147,13 @@ print_hu()
 	if [[ -d ./PokemonGo-Bot ]] ; then
 		printf '%s\n' "You are currently on ["$CURBRANCH_BOT"] branch of PokemonGo-Bot"
 		if [[ $BOT_UPDATE -eq 1 ]]; then
-			printf '%s\n' " -> Your local bot is on commit: [$OLDBRANCH_BOT]"
-			printf '%s\n' " -> Newest commit on github is : [$HEAD_BOT]"
+			print_msg_newline " -> Your local bot is on commit: [$OLDBRANCH_BOT]"
+			print_msg_newline " -> Newest commit on github is : [$HEAD_BOT]"
 		else
-			printf '%s\n' " -> This is the newest version"
+			print_msg_newline " -> This is the newest version"
 		fi
+	else
+			print_msg_newline " -> You have not installed PokemonGo-Bot yet"
 	fi
 }
 
@@ -165,12 +167,13 @@ display_menu()
 		print_banner "PokemonGo-Bot Wrapper OSX"
 	fi
 	print_hu
-	rule
 	if [[ ! -d ./PokemonGo-Bot ]] ; then
+		rule
 		print_command i "Choose and install PokemonGo-Bot branch"
 	fi
 	if [[ -d ./PokemonGo-Bot ]] && [[ "$CLONE_OR_COPY" -eq 1 ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
+			rule
 			print_msg_newline ""
 			printf '\t%s\n' "Please go to "
 			print_msg_newline ""
@@ -184,6 +187,7 @@ display_menu()
 		fi
 	elif [[ -d ./PokemonGo-Bot ]] && [[ "$CLONE_OR_COPY" -eq 2 ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
+			rule
 			print_msg_newline ""
 			printf '\t%s\n' "Please go to "
 			print_msg_newline ""
@@ -195,6 +199,7 @@ display_menu()
 			print_msg_newline ""
 			rule
 		else
+			rule
 			print_msg_newline ""
 			printf '\t%s\n' "It looks like you copied over an instance of the bot you had installed before."
 			printf '\t%s\n' "If starting a bot does not work, try entering setup as choice."
@@ -204,17 +209,12 @@ display_menu()
 	fi
 	if [[ -d ./PokemonGo-Bot/configs ]] ; then
 		if [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
+			rule
 			print_command s "Start PokemonGo-Bot"
 			print_command w "Start web interface"
-			if [[ $BOT_UPDATE -eq 1 ]] ; then
+			if [[ $BOT_UPDATE -eq 1 ]] || [[ $WRAPPER_UPDATE -eq 1 ]] ; then
 				print_msg_newline ""
-				print_command ub "Update Bot"
-			fi
-			if [[ $WRAPPER_UPDATE -eq 1 ]] ; then
-				if [[ $BOT_UPDATE -eq 0 ]] ; then
-					print_msg_newline ""
-				fi
-				print_command uw "Update wrapper"
+				print_command u "Update menu"
 			fi
 			print_msg_newline ""
 			print_command r "Restart wrapper"
@@ -226,7 +226,7 @@ display_menu()
     case "$CHOICE" in
         i|I) branch_menu ;;
         s|S) start_menu ;;
-        ub|UB) update_bot ;;
+        u|U) update_menu ;;
         w|W) start_web_file ;;
         setup) 
 			move_to_dir "PokemonGo-Bot"
@@ -236,7 +236,6 @@ display_menu()
 			init_sub
 			cd ..
 			exec ./start.sh ;;
-		uw|UW) update_wrapper ;;
         r|R) exec ./start.sh ;;
         x|X) exit 0 ;;
     esac
@@ -304,6 +303,26 @@ configure_menu()
 {
  echo "Nothing yet"
  return 1
+}
+
+update_menu()
+{
+	clear
+	print_banner "Update menu"
+	if [[ $BOT_UPDATE -eq 1 ]] ; then
+		print_command b "Update PokemonGo-Bot"
+	elif [[ $WRAPPER_UPDATE -eq 1 ]] ; then
+		print_command w "Update wrapper"
+	fi
+	print_msg_newline ""
+	print_command x "Return"
+	print_msg_newline ""
+	read -p "Please choose: " CHOICE
+    case "$CHOICE" in
+        b|B) update_bot ;;
+        w|W) update_wrapper ;;
+        x|X) return 0 ;;
+    esac
 }
 
 # subroutines for cloning, installation, updating and starting
@@ -599,34 +618,6 @@ check_for_updates_wrapper()
 			WRAPPER_UPDATE=1
 		fi
 		done_or_fail
-	fi
-}
-
-version_less_than() {
-	# $1 - Input version
-	# $2 - Compared version
-	# Returns true if $1 < $2, false otherwise
-	if [[ "$1" != "$2" && "$(echo -e "$1\n$2" | sort | head -n 1)" = "$1" ]]; then
-		return 0
-	else
-		return 1
-	fi
-}
-
-check_connection()
-{
-	if [[ -d ".git" && ! -z "$(which git)" ]]; then
-		print_msg " - Checking network connection..."
-		if [[ "$(wget --spider github.com >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
-			print_msg_newline ""
-			print_msg_newline ""
-			printf '%s\t%s\n' "WARNING: Could not connect to github.com, probably your network is down"
-			press_enter
-			return 0
-		else
-			print_msg_newline "[DONE]"
-			CONNECTION=1
-		fi
 	fi
 }
 

@@ -55,6 +55,12 @@ in your terminal.
 **see wiki for an usage example**
 
 ###**ChangeLog**
+####**v0.4**
+- removed some functions (online-check, needed git version etc.pp)
+- summed up code needed more than one time
+- changes to logging
+- some code fixes
+
 ####**v0.3**
 - batch start all accounts
 - batch start selection of accounts
