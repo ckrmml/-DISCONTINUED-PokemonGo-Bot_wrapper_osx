@@ -578,6 +578,8 @@ start_bot_file()
     rm -f ./*.command
     done_or_fail
     print_msg_newline " -> Returning to main menu"
+    sleep 5    
+    exec ./start.sh
 }
 
 start_web_file()
@@ -599,16 +601,19 @@ start_web_file()
 	echo "done" >> $TMP_FILE	
     chmod +x "$TMP_FILE"
     done_or_fail
-	print_msg "Executing web interface start command file..."    
+	print_msg " - Executing web interface start command file..."    
     open -b com.apple.terminal "$TMP_FILE"    
     done_or_fail
     sleep 3
-    print_msg "Deleting bot start command file..."
+    print_msg " - Deleting bot start command file..."
     rm -f ./*.command    
     done_or_fail
+	print_msg_newline ""
     print_msg_newline "Open your browser and visit the site:"
     print_msg_newline "http://localhost:8000"
     print_msg_newline "to view the map"
+	print_msg_newline ""
+    print_msg_newline " -> Returning to main menu"
     sleep 5    
     exec ./start.sh
 }
