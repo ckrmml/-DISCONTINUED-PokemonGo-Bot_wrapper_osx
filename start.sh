@@ -25,12 +25,12 @@ export CURBRANCH_BOT=""
 export HEAD_BOT=""
 
 # PokemonGo-Bot wrapper scrip variables
-export CLONE_OR_COPY=0
 export BOT_UPDATE=0
 export WRAPPER_UPDATE=0
 
-# variable variables
-export CONNECTION=0
+# requirements arrays
+TOOLS=(brew git python pip virtualenv) 
+MISSINGTOOLS=()
 
 # populate variables on start-up
 populate_variables()
@@ -43,11 +43,6 @@ populate_variables()
 		HEAD_BOT="$(git rev-parse "$REPO_BOT/$CURBRANCH_BOT")"
 		print_msg_newline "[DONE]"
 		cd ..
-		if [[ -f clone ]] ; then
-			CLONE_OR_COPY=1
-		else
-			CLONE_OR_COPY=2
-		fi
 	fi
 	print_msg " - Populating wrapper specific variables..."
 	OLDHEAD="$(git rev-parse HEAD)"
@@ -77,25 +72,102 @@ done_or_fail()
 check_req()
 {
 	print_msg " - Checking for PokemonGo-Bot requirements..."
-	TOOLS=(python pip git virtualenv brew) 
 	if [[ "$(which "${TOOLS[@]}" >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then
-	    MISSINGTOOLS=""
 	    for TOOL in "${TOOLS[@]}"; do
 	        if [[ -z "$(which $TOOL)" ]]; then
-   	         MISSINGTOOLS+="$TOOL "
-   	     fi
+   	         	MISSINGTOOLS[$i]=$TOOL
+   	         	i=$(($i+1))
+   	     	fi
    		done
-    	printf "\n"
+    	print_msg_newline ""
+    	rule
+    	print_msg_newline ""
     	printf '%s\t%s\n' "Error:" "It looks like you don't have the required tool(s): "
-		printf "\n"
-    	printf '\t%s\n' "$MISSINGTOOLS"
-    	printf "\n"
+		print_msg_newline ""
+    	printf '\t' ""
+    	printf '%s ' "${MISSINGTOOLS[@]}"
+    	print_msg_newline ""
+    	print_msg_newline ""
     	printf '\t%s\n' "This check was made through 'which' command"
-    	printf '\t%s\n' "Please install missing tool(s) and relaunch depTREE"
-    	printf "\n"
-    	exit 1 
+		printf '\t%s\n'	"Should we try to download and install the missing tools?"		
+    	print_msg_newline ""
+		rule
+		read -p "Y/N: " CHOICE
+		case "$CHOICE" in
+        	y|Y) install_missing_tools ;;
+        	n|N) 
+        		rule 	
+				print_msg_newline ""
+        		printf '\t%s\n' "Please install missing tool(s) and relaunch PokemonGo-Bot wrapper script"
+				print_msg_newline ""
+				rule
+				exit 1 ;;
+    	esac	
 	fi
+	touch depmet
 	print_msg_newline "[DONE]"
+}
+
+install_missing_tools()
+{
+	clear
+	print_banner "PokemonGo-Bot Wrapper OSX"
+	print_msg_newline "If installation should fail, you have to manually install using su or sudo command"
+	rule
+	for MISSINGTOOL in "${MISSINGTOOLS[@]}" ; do
+		if [[ "$MISSINGTOOL" == brew ]] ; then
+			print_msg_newline " > Attempting to install homebrew <"
+			print_msg " - Using Homebrew install command..."
+			/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"	
+			done_or_fail
+			print_msg_newline ""
+			print_msg_newline "Restarting wrapper because homebrew is needed for some installations..."
+			sleep 2
+			exec ./start.sh
+		elif [[ "$MISSINGTOOL" == git ]] ; then
+			print_msg_newline " > Attempting to install git <"
+			print_msg " - Using Homebrew git formula..."
+			brew --quiet install git	
+			done_or_fail
+			print_msg_newline ""
+		elif [[ "$MISSINGTOOL" == python ]] ; then
+			print_msg_newline " > Attempting to install python <"
+			print_msg " - Using Homebrew python formula..."
+			brew --quiet install python	
+			done_or_fail
+			print_msg " - Updating pip..."
+			pip install -qU pip
+			done_or_fail
+			print_msg_newline ""
+			print_msg_newline "Restarting wrapper because installing python should also have installed pip and virtualenv..."
+			sleep 2
+			exec ./start.sh
+		elif [[ "$MISSINGTOOL" == pip ]] ; then
+			print_msg_newline " > Attempting to install pip <"
+			mkdir downloads
+			cd ./downloads
+			print_msg " - Downloading get-pip.py..."
+			wget --quiet https://bootstrap.pypa.io/get-pip.py			
+			done_or_fail
+			print_msg " - Executing get-pip.py..."
+			python get-pip.py 2>/dev/null
+			done_or_fail
+			cd ..
+			print_msg " - Cleaning up..."
+			rm -rf ./downloads
+			done_or_fail
+			print_msg_newline ""
+		elif [[ "$MISSINGTOOL" == virtualenv ]] ; then
+			print_msg_newline " > Attempting to install virtualenv <"
+			print_msg " - Using Homebrew virtualenv formula..."
+			pip install -q virtualenv			
+			done_or_fail
+			print_msg_newline ""
+		fi
+	done
+	print_msg_newline "Restarting wrapper..."
+	sleep 2
+	exec ./start.sh	
 }
 
 # text messages etc pp
@@ -147,7 +219,7 @@ print_hu()
 	if [[ -d ./PokemonGo-Bot ]] ; then
 		printf '%s\n' "You are currently on ["$CURBRANCH_BOT"] branch of PokemonGo-Bot"
 		if [[ $BOT_UPDATE -eq 1 ]]; then
-			print_msg_newline " -> Your local bot is on commit: [$OLDBRANCH_BOT]"
+			print_msg_newline " -> Your local bot is on commit: [$OLDHEAD_BOT]"
 			print_msg_newline " -> Newest commit on github is : [$HEAD_BOT]"
 		else
 			print_msg_newline " -> This is the newest version"
@@ -171,7 +243,7 @@ display_menu()
 		rule
 		print_command i "Choose and install PokemonGo-Bot branch"
 	fi
-	if [[ -d ./PokemonGo-Bot ]] && [[ "$CLONE_OR_COPY" -eq 1 ]] ; then
+	if [[ -d ./PokemonGo-Bot ]] && [[ -f clone ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			rule
 			print_msg_newline ""
@@ -185,7 +257,7 @@ display_menu()
 			print_msg_newline ""
 			rule
 		fi
-	elif [[ -d ./PokemonGo-Bot ]] && [[ "$CLONE_OR_COPY" -eq 2 ]] ; then
+	elif [[ -d ./PokemonGo-Bot ]] && [[ ! -f clone ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			rule
 			print_msg_newline ""
@@ -207,19 +279,33 @@ display_menu()
 			rule
 		fi
 	fi
-	if [[ -d ./PokemonGo-Bot/configs ]] ; then
+	if [[ -d ./PokemonGo-Bot ]] && [[ ! -f ./PokemonGo-Bot/encrypt.so ]] ; then
+		rule
+		print_msg_newline ""
+		printf '\t%s\n' "It looks like you don't have installed:"
+		print_msg_newline ""
+    	printf '\t%s\n' "encrypt.so"
+		print_msg_newline ""
+		printf '\t%s\n' "The bot won't work without it."
+		printf '\t%s\n'	"Should we try to download and install the file?"		
+		print_msg_newline ""
+		rule
+		read -p "Y/N: " CHOICE
+		case "$CHOICE" in
+       		y|Y) install_lib_crypt 1 ;;
+       		n|N) install_lib_crypt 2 ;;
+  		esac	
+	elif [[ -f PokemonGo-Bot ]] ; then
 		if [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			rule
 			print_command s "Start PokemonGo-Bot"
 			print_command w "Start web interface"
 			if [[ $BOT_UPDATE -eq 1 ]] || [[ $WRAPPER_UPDATE -eq 1 ]] ; then
-				print_msg_newline ""
 				print_command u "Update menu"
 			fi
-			print_msg_newline ""
-			print_command r "Restart wrapper"
 		fi
 	fi
+	print_command r "Restart wrapper"
 	print_command x "Quit"
 	rule
 	read -p "Please choose: " CHOICE
@@ -236,6 +322,7 @@ display_menu()
 			init_sub
 			cd ..
 			exec ./start.sh ;;
+        c) install_lib_crypt ;;
         r|R) exec ./start.sh ;;
         x|X) exit 0 ;;
     esac
@@ -314,9 +401,8 @@ update_menu()
 	elif [[ $WRAPPER_UPDATE -eq 1 ]] ; then
 		print_command w "Update wrapper"
 	fi
-	print_msg_newline ""
 	print_command x "Return"
-	print_msg_newline ""
+	rule
 	read -p "Please choose: " CHOICE
     case "$CHOICE" in
         b|B) update_bot ;;
@@ -356,41 +442,33 @@ clone_bot_git()
 setup_virtualenv()
 {
 	print_msg " - Setting up Python virtualenv..."
-	virtualenv -q . 2>/dev/null
-	done_or_fail
+	virtualenv -q . 2>/dev/null && done_or_fail
 }
 
 activate_virtualenv()
 {
 	print_msg " - Activating Python virtualenv..."
-	source bin/activate 2>/dev/null
-	done_or_fail
+	source bin/activate 2>/dev/null && done_or_fail
 }
 
 install_req()
 {
 	print_msg " - Install requirements..."
-	pip install -qr requirements.txt 2>/dev/null
-	done_or_fail
+	pip install -qr requirements.txt 2>/dev/null && done_or_fail
 }
 
 update_req()
 {
 	print_msg " - Updating requirements..."	
-	pip install --upgrade -qr requirements.txt 2>/dev/null
-	done_or_fail
+	pip install --upgrade -qr requirements.txt 2>/dev/null && done_or_fail
 }
 
 init_sub()
 {
-	cd ./web 	
 	print_msg " - Initializing submodule..."
-	git submodule -q init 2>/dev/null
-	done_or_fail
-	cd ..	
+	cd ./web && git submodule -q init 2>/dev/null && done_or_fail && cd ..	
 	print_msg " - Updating submodule..."
-	git submodule -q update 2>/dev/null
-	done_or_fail
+	git submodule -q update 2>/dev/null && done_or_fail
 }
 
 install_bot()
@@ -402,7 +480,49 @@ install_bot()
 	install_req
 	init_sub
 	cd ..
-	exec ./start.sh
+	install_lib_crypt 1
+}
+
+install_lib_crypt()
+{
+	choice=$1
+	clear
+	print_banner "Installing libencrypt.so"
+	if [[ $choice -eq 1 ]] ; then
+		print_msg " - Attempting to download pgoencrypt.tar.gz..."
+		mkdir downloads
+		cd ./downloads
+		wget --quiet http://pgoapi.com/pgoencrypt.tar.gz
+		done_or_fail
+		print_msg " - Unarchiving pgoencrypt.tar.gz..."
+		tar -xf pgoencrypt.tar.gz
+		done_or_fail
+		cd ./pgoencrypt/src/
+		print_msg " - Attempting to make libencrypt.so..."
+		make -s 2>/dev/null 
+		done_or_fail
+		print_msg " - Renaming libencrypt.so to encrypt.so..."		
+		mv libencrypt.so encrypt.so
+		done_or_fail
+		cd .. && cd .. && cd ..
+		print_msg " - Moving encrypt.so to PokemonGo-Bot directory..."		
+		ditto ./downloads/pgoencrypt/src/encrypt.so ./PokemonGo-Bot/encrypt.so
+		done_or_fail
+		print_msg " - Cleaning up..."
+		rm -rf ./downloads
+		done_or_fail
+		print_msg_newline ""
+		print_msg_newline "   Installation of encrypt.so complete. Restarting wrapper..."
+		sleep 3
+		exec ./start.sh
+	elif [[ $choice -eq 2 ]] ; then
+		print_msg_newline ""
+		printf '\t%s\n' "Download http://pgoapi.com/pgoencrypt.tar.gz and make file."
+		printf '\t%s\n' "Rename libencrypt.so to encrypt.so and move the file into PokemonGo-Bot directory."
+		printf '\t%s\n' "After you have done this, please restart the wrapper."
+		print_msg_newline ""
+		rule
+	fi
 }
 
 batch_start()
@@ -441,7 +561,7 @@ start_bot_file()
 	echo "print_msg_newline \" - Executing PokemonGo-Bot with config $ACTIVE_CONFIG...\"" >> $TMP_FILE
 	echo "print_msg_newline \"\"" >> $TMP_FILE
 	echo "while true ; do" >> $TMP_FILE
-	echo "	./pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_FILE
+	echo "	python pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_FILE
 	echo "	print_msg_newline \"\"" >> $TMP_FILE
 	echo "	print_msg_newline \" - PokemonGo-Bot exited...\"" >> $TMP_FILE
 	echo "	print_msg_newline \" - Restarting in five seconds...\"" >> $TMP_FILE
@@ -457,6 +577,7 @@ start_bot_file()
     print_msg " - Deleting bot start command file..."
     rm -f ./*.command
     done_or_fail
+    print_msg_newline " -> Returning to main menu"
 }
 
 start_web_file()
@@ -522,8 +643,9 @@ update_wrapper()
 		print_msg_newline "" # Because git log doesn't finish with newline
 		print_msg_newline "=========="
 		git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
-		print_msg_newline "PokemonGo-Bot_wrapper_osx has been updated."
-		press_enter
+		print_msg_newline ""
+		print_msg_newline " > PokemonGo-Bot_wrapper_osx has been updated <"
+		print_msg_newline ""
 		exec ./start.sh
 	else
 		no_update_found
@@ -554,11 +676,11 @@ update_bot()
 		print_msg_newline "=========="
 		print_msg_newline ""
 		press_enter
-		git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT" >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT")
-		print_msg_newline "PokemonGo-Bot has been updated."
-		press_enter
+		git pull -q >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; press_enter; git reset -q --hard; git clean -qfd; git pull -q "$REPO_BOT" "$GITHUBBRANCH_BOT")
+		print_msg_newline ""
+		print_msg_newline " > PokemonGo-Bot has been updated <"
+		print_msg_newline ""
 		# update requirements after update
-		move_to_dir "PokemonGo-Bot"
 		activate_virtualenv
 		update_req
 		init_sub
@@ -613,12 +735,15 @@ check_for_updates_wrapper()
 # boot things
 clear
 print_banner "Start-up checks"
-check_req
+if [[ ! -f depmet ]] ; then
+	check_req
+fi
 populate_variables
 check_for_updates_bot
 check_for_updates_wrapper
 print_msg_newline ""
 print_msg_newline "   Checks complete"
+sleep 3
 # core app
 while true ; do
 	display_menu
