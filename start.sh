@@ -295,7 +295,7 @@ display_menu()
        		y|Y) install_lib_crypt 1 ;;
        		n|N) install_lib_crypt 2 ;;
   		esac	
-	elif [[ -f PokemonGo-Bot ]] ; then
+	elif [[ -d PokemonGo-Bot ]] && [[  -f ./PokemonGo-Bot/encrypt.so ]] ; then
 		if [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			rule
 			print_command s "Start PokemonGo-Bot"
