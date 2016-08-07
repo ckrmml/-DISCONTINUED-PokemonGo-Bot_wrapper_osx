@@ -578,8 +578,6 @@ start_bot_file()
     rm -f ./*.command
     done_or_fail
     print_msg_newline " -> Returning to main menu"
-    sleep 5    
-    exec ./start.sh
 }
 
 start_web_file()
