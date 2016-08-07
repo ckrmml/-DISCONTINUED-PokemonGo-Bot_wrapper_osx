@@ -7,15 +7,21 @@ This wrapper script will allow you to install the PokemonGo-Bot on Mac OSX and e
 
 **As of now you have to edit the configuration file yourself or copy yours over there**
 
-Everything beside that, like 
-- cloning desired branch, 
-- installing and updating requirements and submodule, 
-- initializing and activating Python virtualenv 
-- batch start all accounts
-- batch start selection of accounts
-- start web server
+This script will (at least try to):
 
-will be done by the script. 
+- [x] clone desired branch 
+- [x] install and update requirements (from requirements.txt)
+- [x] install and update submodule 
+- [x] install libencrypt.so
+- [x] install unmet requirements (Python, Homebrew, virtualenv, pip, git)
+- [x] initialise and activate Python virtualenv 
+- [x] start a single account (if there is only one, it will get startet automatically)
+- [x] start selection of accounts
+- [x] start all accounts
+- [x] start web server
+- [x] update bot
+- [x] update itself
+
 Edit your configuration files and simply choose which accounts the bot should be playing.
 
 As this script will always download the latest commit, your old configuration files might no longer work. If you want an older commit of the 
@@ -55,6 +61,11 @@ in your terminal.
 **see wiki for an usage example**
 
 ###**ChangeLog**
+####**v0.5**
+- script installs requirements if not met (Python, Homebrew, virtualenv, pip, git)
+- script installs libencrypt.so
+- some code fixes
+
 ####**v0.4**
 - removed some functions (online-check, needed git version etc.pp)
 - summed up code needed more than one time
