@@ -7,6 +7,8 @@ This wrapper script will allow you to install the PokemonGo-Bot on Mac OSX and e
 
 **As of now you have to edit the configuration file yourself or copy yours over there**
 
+**The update functions may be broken, please file an issue if you have problems**
+
 This script will (at least try to):
 
 - [x] clone desired branch 
@@ -27,17 +29,11 @@ Edit your configuration files and simply choose which accounts the bot should be
 As this script will always download the latest commit, your old configuration files might no longer work. If you want an older commit of the 
 bot, or already have one installed, just copy it over there and it should probably work.
 
-###**Requirements for PokemonGo-Bot you have to install by yourself**
+###**Requirements for PokemonGo-Bot you still have to install by yourself**
 
-- [Python 2.7.x](http://docs.python-guide.org/en/latest/starting/installation/)
-- [pip](https://pip.pypa.io/en/stable/installing/)
-- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [virtualenv](https://virtualenv.pypa.io/en/stable/installation/) (Recommended for the bot, definitely needed for the wrapper)
 - protobuf 3 -> brew update && brew install --devel protobuf
 
 **-> protobuf 3 installation needs [Homebrew](http://brew.sh).**
-
-Follow link and install or execute the command
 
 ```
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
