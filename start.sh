@@ -446,7 +446,8 @@ menu_update()
 	print_banner "Update menu"
 	if [[ $BOT_UPDATE -eq 1 ]] ; then
 		print_command b "Update PokemonGo-Bot"
-	elif [[ $WRAPPER_UPDATE -eq 1 ]] ; then
+	fi
+	if [[ $WRAPPER_UPDATE -eq 1 ]] ; then
 		print_command w "Update wrapper"
 	fi
 	print_command x "Return"
