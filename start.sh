@@ -54,6 +54,7 @@ export WRAPPER_UPDATE=0
 export RUNNING_BOTS=0
 
 # directory variables
+export BOT_CFG=tools/bot_config
 export CMD_DIR=tmp/cmd
 export NODE_DIR=tools/tor_nodes
 export PROXYCHAINS_CFG=tools/proxychains_configs
@@ -68,7 +69,7 @@ export PROXY_CONF=""
 export TOR_CONF=""
 
 # requirements arrays
-TOOLS=(brew git python pip virtualenv wget ghead gdate gstats tor proxychains4) 
+TOOLS=(brew git python pip virtualenv wget ghead gdate gstat tor proxychains4) 
 MISSINGTOOLS=()
 
 # colors
@@ -94,19 +95,10 @@ activate_virtualenv() {
 }
 
 batch_start() {
-	PROXY=$1
-    while read line ; do
-        LASTFOUND="$line"
-        if [[ -f "$line" ]] ; then
- 			CHOICE="$(basename "$line")"
-           	ACTIVE_CONFIG="$CHOICE"
-            if [[ $PROXY -eq 1 ]] ; then
-            	start_bot_file 1
-            else
-            	start_bot_file
-            fi
-        fi
-    done < <(find ./PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -not -iname "*path*" -maxdepth 1)
+	for CONFIG in "${BATCH_ARRAY[@]}"; do 
+		ACTIVE_CONFIG="$CONFIG"
+        start_bot_file
+    done
 }
 
 check_admin() {
@@ -117,12 +109,12 @@ check_admin() {
 	else
 		local USER=$(whoami)
 		print_msg_newline "[FAIL]"
-		print_msg_newline ""
+		log_empty
 		printf '%s\t%s\n' "Error:" "Your OSX account [$USER] is not an admin account."
 		printf '\t%s\n' "This can fail installing PokemonGo-Bot requirements and updating"
 		printf '\t%s\n' "pip requirements, which in turn results in failing execution of the bot."
-		print_msg_newline ""
-		print_msg_newline ""
+		log_empty
+		log_empty
 	fi
 }
 
@@ -135,27 +127,27 @@ check_tools() {
    	         	i=$(($i+1))
    	     	fi
    		done
-    	print_msg_newline ""
+    	log_empty
     	rule
-    	print_msg_newline ""
+    	log_empty
     	printf '%s\t%s\n' "${RED}Error${NORMAL}:" "It looks like you don't have the required tool(s): "
-		print_msg_newline ""
+		log_empty
     	printf '\t' ""
     	printf '%s ' "${WHITE}${MISSINGTOOLS[@]}${NORMAL}"
-    	print_msg_newline ""
-    	print_msg_newline ""
+    	log_empty
+    	log_empty
     	printf '\t%s\n' "This check was made through 'which' command"
 		printf '\t%s\n'	"Should we try to download and install the missing tools?"		
-    	print_msg_newline ""
+    	log_empty
 		rule
 		read -p "Y/N: " CHOICE
 		case "$CHOICE" in
         	y|Y) install_missing_tools ;;
         	n|N) 
         		rule 	
-				print_msg_newline ""
+				log_empty
         		printf '\t%s\n' "Please install missing tool(s) and relaunch PokemonGo-Bot wrapper script"
-				print_msg_newline ""
+				log_empty
 				rule
 				exit 1 ;;
     	esac	
@@ -163,24 +155,24 @@ check_tools() {
 		print_msg_newline "[${GREEN}DONE${NORMAL}]"
 	fi
 	if [[ "$(brew list | grep protobuf >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then
-	    print_msg_newline ""
+	    log_empty
 		rule
-		print_msg_newline ""
+		log_empty
 		printf '%s\t%s\n' "${RED}Error${NORMAL}:" "It looks like you don't have"
-		print_msg_newline ""
+		log_empty
 		printf '\t%s\n' "${WHITE}protobuf${NORMAL}"
-		print_msg_newline ""
+		log_empty
 		printf '\t%s\n'	"installed. Should we try to download and install the missing tools?"		
-		print_msg_newline ""
+		log_empty
 		rule
 		read -p "Y/N: " CHOICE
 		case "$CHOICE" in
 			y|Y) install_missing_tools ;;
 			n|N) 
 				rule 	
-				print_msg_newline ""
+				log_empty
 				printf '\t%s\n' "Please install protobuf and relaunch PokemonGo-Bot wrapper script"
-				print_msg_newline ""
+				log_empty
 				rule
 				exit 1 ;;
 		esac	
@@ -228,14 +220,14 @@ clone_bot_git() {
 	log_done
 	else
 		log_fail
-		print_msg_newline ""
+		log_empty
 		print_msg_newline "   Error code $OUT returned !! "
-		print_msg_newline ""
+		log_empty
 		case $OUT in
 			128) log_failure "This means the directory already exists" ;;
 			*) log_failure "This error is unknown" ;;
 		esac
-		print_msg_newline ""
+		log_empty
 		log_msg "Exiting..."
 		sleep 5
 		exit 1
@@ -243,28 +235,47 @@ clone_bot_git() {
 }
 
 config_wrapper() {
-	if [[ ! -f tools/$ACTIVE_CONFIG.config ]] ; then
+	TMP_CFG=tools/bot_config/$ACTIVE_CONFIG.config
+	if [[ ! -f tools/bot_config/$ACTIVE_CONFIG.config ]] ; then
 		clear
-		print_banner "Configuration"
+		print_banner "$ACTIVE_CONFIG configuration"
 		print_msg_newline "Would you like to proxy this bot over TOR?"
-		print_msg_newline ""
+		log_empty
 		read -p "[Y/N]: " PROXY_THIS_BOT
-		print_msg_newline ""
-		print_msg_newline "Please choose a country for the TOR exit node"
-		print_msg_newline ""
-		read -p "[Y/N]: " COUNTRY
-		print_msg_newline ""
-		print_msg_newline "Would you like TOR to configure itself??"
-		print_msg_newline ""
-		read -p "[Y/N]: " SELF_CHOSEN
-		print_msg_newline ""
-		touch tools/$ACTIVE_CONFIG.config
-		echo "PROXY_THIS_BOT=$PROXY_THIS_BOT" >> tools/$ACTIVE_CONFIG.config
-		echo "COUNTRY=$COUNTRY" >> tools/$ACTIVE_CONFIG.config
-		echo "SELF_CHOSEN=$SELF_CHOSEN" >> tools/$ACTIVE_CONFIG.config
-		chmod +x tools/$ACTIVE_CONFIG.config
+		if [[ $PROXY_THIS_BOT == Y ]] || [[ $PROXY_THIS_BOT == y ]] ; then
+			clear
+			print_banner "Configuration"
+			print_msg_newline "Please choose a country for the TOR exit node"
+			log_empty
+			read -p "[Country]: " COUNTRY
+			clear
+			print_banner "Configuration"
+			print_msg_newline "Would you like TOR to configure itself?"
+			log_empty
+			read -p "[Y/N]: " SELF_CHOSEN
+			if [[ $SELF_CHOSEN == N ]] || [[ $SELF_CHOSEN == n ]] ; then
+				clear
+				print_banner "Configuration"
+				print_msg_newline "How many exit nodes should we pass TOR?"
+				print_msg_newline "We can pass only one, but 2 or 3 is much safer if one stops running."
+				log_empty
+				read -p "[Any number]: " EXIT_NODES
+				log_empty
+			fi
+		fi
+		touch $TMP_CFG
+		echo "PROXY_THIS_BOT=$PROXY_THIS_BOT" >> $TMP_CFG
+		if [[ $PROXY_THIS_BOT == Y ]] || [[ $PROXY_THIS_BOT == y ]] ; then
+			echo "COUNTRY=$COUNTRY" >> $TMP_CFG
+			echo "SELF_CHOSEN=$SELF_CHOSEN" >> $TMP_CFG
+			if [[ $SELF_CHOSEN == N ]] || [[ $SELF_CHOSEN == n ]] ; then
+				echo "EXIT_NODES=$EXIT_NODES" >> $TMP_CFG
+			fi
+		fi
+		chmod +x $TMP_CFG
 	else
-		source tools/$ACTIVE_CONFIG.config
+		log_header "Loading $ACTIVE_CONFIG configuration file"
+		source $TMP_CFG
 		log_success "Successfully loaded $ACTIVE_CONFIG wrapper configuration file"
 	fi
 }
@@ -298,14 +309,32 @@ done_or_fail() {
 		log_done
 	else
 		log_fail
-		print_msg_newline ""
+		log_empty
 		print_msg_newline "   Error code $OUT returned !! "
-		print_msg_newline ""
+		log_empty
 		log_msg "Exiting..."
 		sleep 5
 		exit 1
 	fi
-}	
+}
+	
+inflate_directories() {
+	if [[ ! -d $TMP_DIR ]] ; then
+		log_msg "Inflating tmp dir..."
+		mkdir $TMP_DIR
+		log_done
+	fi	
+	if [[ ! -d $BOT_CFG ]] ; then
+		log_msg "Inflating bot config dir..."
+		mkdir $BOT_CFG
+		log_done
+	fi
+	if [[ ! -d $CMD_DIR ]] ; then
+		log_msg "Inflating command dir..."
+		mkdir $CMD_DIR
+		log_done
+	fi
+}
 
 init_sub() {
 	log_msg "Initializing submodule..."
@@ -350,7 +379,7 @@ install_lib_crypt() {
 	done_or_fail
 	log_success "Installation of encrypt.so complete"
 	log_msg "Restarting wrapper..." 
-    print_msg_newline ""
+    log_empty
 	sleep 3
 	exec ./start.sh
 }
@@ -364,7 +393,7 @@ install_missing_tools() {
 		if [[ "$MISSINGTOOL" == brew ]] ; then
 			log_header "Attempting to install homebrew"
 			log_msg "Using Homebrew install command..."
-			print_msg_newline ""
+			log_empty
 			/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"	
 			log_msg "Restarting wrapper because homebrew is needed for some installations..."
 			sleep 2
@@ -403,7 +432,7 @@ install_missing_tools() {
 			log_msg "Using pip virtualenv command..."
 			pip install -q virtualenv			
 			done_or_fail
-		elif [[ "$MISSINGTOOL" == ghead ]] ; then
+		elif [[ "$MISSINGTOOL" == ghead ]] || [[ "$MISSINGTOOL" == gstat ]] || [[ "$MISSINGTOOL" == gdate ]] ; then
 			log_header "Attempting to install ghead"
 			log_msg "Using Homebrew coreutils formula..."
 			brew install coreutils >/dev/null
@@ -426,7 +455,7 @@ install_missing_tools() {
 		fi
 	done
 	log_msg "Restarting wrapper..."
-    print_msg_newline ""
+    log_empty
 	sleep 2
 	exec ./start.sh	
 }
@@ -437,11 +466,15 @@ install_pip_req() {
 }
 
 log_done() {
-	printf '%s\n' "[${GREEN}DONE${NORMAL}]"
+	printf '%s\n' "${WHITE}[${GREEN}DONE${WHITE}]${NORMAL}"
+}
+
+log_empty() {
+	printf '\n'
 }
 
 log_fail() {
-	printf '%s\n' "[${RED}FAIL${NORMAL}]"
+	printf '%s\n' "${WHITE}[${RED}FAIL${WHITE}]${NORMAL}"
 }
 
 log_failure() {
@@ -466,6 +499,11 @@ log_success() {
 	printf '%s %s %s\n' "${GREEN}<!>${NORMAL}" "${YELLOW}$text${NORMAL}" "${GREEN}<!>${NORMAL}" 
 }
 
+menu_bot_config() {
+ echo "Nothing yet"
+ return 1
+}
+
 menu_branch() {
 	clear
 	print_banner "PokemonGo-Bot Wrapper OSX"
@@ -485,11 +523,6 @@ menu_branch() {
     esac
 }
 
-menu_configure() {
- echo "Nothing yet"
- return 1
-}
-
 menu_main() {
 	clear
 	if [[ $WRAPPER_UPDATE -eq 1 ]]; then
@@ -506,35 +539,35 @@ menu_main() {
 	if [[ -d ./PokemonGo-Bot ]] && [[ -f ./tools/clone ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			rule
-			print_msg_newline ""
+			log_empty
 			printf '\t%s\n' "Please go to "
-			print_msg_newline ""
+			log_empty
 			printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
-			print_msg_newline ""
+			log_empty
 			printf '\t%s\n' "and create a configuration file to continue."
 			printf '\t%s\n' "After you have done this, please enter 'r' "
 			printf '\t%s\n' "or 'R' as choice or restart the wrapper."
-			print_msg_newline ""
+			log_empty
 			rule
 		fi
 	elif [[ -d ./PokemonGo-Bot ]] && [[ ! -f ./tools/clone ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			rule
-			print_msg_newline ""
+			log_empty
 			printf '\t%s\n' "Please go to "
-			print_msg_newline ""
+			log_empty
 			printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
-			print_msg_newline ""
+			log_empty
 			printf '\t%s\n' "and create a configuration file to continue."
 			printf '\t%s\n' "After you have done this, please enter 'r' "
 			printf '\t%s\n' "or 'R' as choice or restart the wrapper."
-			print_msg_newline ""
+			log_empty
 		else
 			rule
-			print_msg_newline ""
+			log_empty
 			printf '\t%s\n' "It looks like you copied over an instance of the bot you had installed before."
 			printf '\t%s\n' "If starting a bot does not work, try entering setup as choice."
-			print_msg_newline ""
+			log_empty
 		fi
 	fi
 	if [[ -d PokemonGo-Bot ]] && [[  -f ./PokemonGo-Bot/encrypt.so ]] ; then
@@ -587,21 +620,28 @@ menu_start() {
     file_list=()
 	print_banner "Start bot(s)"
     log_msg "Searching for configuration files you've created in the past..."
-    print_msg_newline ""
+    log_empty
     print_msg_newline "=-=-=-=-=-=-=-=-=-==-=-=-="
  	while IFS= read -d $'\0' -r file ; do     
  		((COUNT++))
      	file_list[$i]=$file
-  		i=$(($i+1))
 	printf '%s\n' "$(basename "${file_list[@]}")"
  	done < <(find PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -not -iname "*path*" -maxdepth 1 -print0) # Avoid a subshell, because we must remember variables
     print_msg_newline "=-=-=-=-=-=-=-=-=-==-=-=-="
     print_msg_newline "$COUNT config files were found"
-	print_msg_newline ""
+	log_empty
     read -p "Please choose (x to return): " CHOICE
+	log_empty
 	case "$CHOICE" in
 	  	x|X) return 0 ;;
-        a|A) batch_start ;; 
+        a|A) 
+			while read line ; do
+        		LASTFOUND="$(basename $line)"
+					BATCH_ARRAY[$i]=$LASTFOUND
+			    	i=$(($i+1))
+   			 done < <(find PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -not -iname "*path*" -maxdepth 1)
+			 batch_start 
+			;; 
        	*)
 			for config in $CHOICE ; do
         		if [[ -f "./PokemonGo-Bot/configs/$config" ]] ; then
@@ -635,10 +675,16 @@ menu_update() {
     esac
 }
 
+menu_wrapper_config() {
+	clear 
+	print_banner "Change wrapper configuration file(s)"
+	
+}
+
 no_update_found() {
 	log_done
-	print_msg_newline ""
-	print_msg_newline ""
+	log_empty
+	log_empty
 	log_msg "No new updates found"
 	sleep 1
 }
@@ -736,46 +782,47 @@ start_bot_file() {
 	export PROXY_THIS_BOT=""
 	export COUNTRY=""
 	export SELF_CHOSEN=""
+	export EXIT_NODES=""
     config_wrapper
-    TMP_FILE="$CMD_DIR/$ACTIVE_CONFIG.command"
+    local TMP_CMD="$CMD_DIR/$ACTIVE_CONFIG.command"
 	if [[ $PROXY_THIS_BOT == y ]] ; then
 		proxy_bot
 	fi
 	log_header "Generating bot start command"
 	log_msg "Read and copy template file..."
 	while read line ; do
-		echo "$line" >> $TMP_FILE
+		echo "$line" >> $TMP_CMD
 	done < $TEMPLATE_DIR/command_template
 	done_or_fail
 	log_msg "Copying over routines..."
     # Change to directory
-    echo "cd $(pwd)" >> $TMP_FILE
-	echo "" >> $TMP_FILE
+    echo "cd $(pwd)" >> $TMP_CMD
+	echo "" >> $TMP_CMD
     # Copy over while loop
-	echo "print_msg_newline \"\"" >> $TMP_FILE
-	echo "cd "PokemonGo-Bot"" >> $TMP_FILE
-	echo "echo $PWD" >> $TMP_FILE
-	echo "activate_virtualenv" >> $TMP_FILE
-	echo "print_msg_newline \" - Executing PokemonGo-Bot with config $ACTIVE_CONFIG...\"" >> $TMP_FILE
-	echo "print_msg_newline \"\"" >> $TMP_FILE
-	echo "while true ; do" >> $TMP_FILE
+	echo "print_msg_newline \"\"" >> $TMP_CMD
+	echo "cd "PokemonGo-Bot"" >> $TMP_CMD
+	echo "echo $PWD" >> $TMP_CMD
+	echo "activate_virtualenv" >> $TMP_CMD
+	echo "print_msg_newline \" - Executing PokemonGo-Bot with config $ACTIVE_CONFIG...\"" >> $TMP_CMD
+	echo "print_msg_newline \"\"" >> $TMP_CMD
+	echo "while true ; do" >> $TMP_CMD
 	if [[ $PROXY_THIS_BOT == y ]] ; then
-		echo "	proxychains4 -f $PROXY_CONF python pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_FILE
+		echo "	proxychains4 -f $PROXY_CONF python pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_CMD
 	else
-		echo "	python pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_FILE
+		echo "	python pokecli.py -cf configs/$ACTIVE_CONFIG" >> $TMP_CMD
 	fi
-	echo "	print_msg_newline \"\"" >> $TMP_FILE
-	echo "	print_msg_newline \" - PokemonGo-Bot exited...\"" >> $TMP_FILE
-	echo "	print_msg_newline \" - Restarting in five seconds...\"" >> $TMP_FILE
-	echo "	print_msg_newline \"\"" >> $TMP_FILE
-	echo "	sleep 5;" >> $TMP_FILE
-	echo "done" >> $TMP_FILE
+	echo "	print_msg_newline \"\"" >> $TMP_CMD
+	echo "	print_msg_newline \" - PokemonGo-Bot exited...\"" >> $TMP_CMD
+	echo "	print_msg_newline \" - Restarting in five seconds...\"" >> $TMP_CMD
+	echo "	print_msg_newline \"\"" >> $TMP_CMD
+	echo "	sleep 5;" >> $TMP_CMD
+	echo "done" >> $TMP_CMD
 	done_or_fail
-	log_msg "Executing bot start command file..."
-    chmod +x "$TMP_FILE"
-    open -b com.apple.terminal "$TMP_FILE"
-    done_or_fail
     log_success "Finished writing bot start command"
+	log_msg "Executing bot start command file..."
+    chmod +x "$TMP_CMD"
+    open -b com.apple.terminal "$TMP_CMD"
+    done_or_fail
     sleep 3
     log_msg "Returning to main menu..."
 }
@@ -790,7 +837,6 @@ start_up_checks() {
 	populate_variables
 	check_updates_bot
 	check_updates_wrapper
-	sleep 2
 }
 
 start_web_file() {
@@ -821,23 +867,23 @@ start_web_file() {
     
     clear
     print_banner "PokemonGo-Bot web interface"
-    print_msg_newline ""
+    log_empty
     print_msg_newline "Should we open localhost:8000 in you standard webbrowser?"
-	print_msg_newline ""
+	log_empty
 	read -p "[Y|N]: " CHOICE
 	case $CHOICE in
 		y|Y)
-			print_msg_newline ""
+			log_empty
 			log_msg "Opening web interface..."
 			open http://localhost:8000
 			log_done
 			;;
 		n|N)
-			print_msg_newline ""
+			log_empty
     		printf '\t%s\n' "Open your browser and visit the site:"
     		printf '\t%s\n' "http://localhost:8000"
     		printf '\t%s\n' "to view the map"
-			print_msg_newline ""
+			log_empty
 			;;
 	esac
     log_msg "Returning to main menu..."
@@ -854,8 +900,8 @@ update_bot() {
 	log_msg "Fetching current version..."
 	git fetch -q "$REPO" "$LOCAL_BRANCH_BOT"
 	if [[ "$LOCAL_BOT" != "$REMOTE_BOT" ]]; then
-		print_msg_newline ""
-		print_msg_newline ""
+		log_empty
+		log_empty
 		print_msg_newline "Found new version!"
 		print_msg_newline "Changelog:"
 		print_msg_newline "=========="
@@ -866,18 +912,18 @@ update_bot() {
     	done < <(git --no-pager log --abbrev-commit --decorate --date=relative --pretty=format:'%C(bold red)%h%Creset %C(bold green)(%cr)%Creset - %C(bold yellow)%s%Creset %C(bold blue)commited by%Creset %C(bold cyan)%an%Creset' "$LOCAL_BOT..$REMOTE_BOT")
 		print_msg_newline "=========="
     	print_msg_newline "There is a difference of $COUNT commits between your version and the version on github"
-		print_msg_newline ""
+		log_empty
 		print_msg_newline "Continue updating PokemonGo-Bot?"
-		print_msg_newline ""
+		log_empty
 		read -p "Y/N: " CHOICE
 		case "$CHOICE" in
         	y|Y) 		
-        		git pull -q >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; print_msg_newline ""; press_enter; print_msg_newline ""; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$LOCAL_BRANCH_BOT")
+        		git pull -q >/dev/null 2>&1 || (log_empty; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; log_empty; press_enter; log_empty; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$LOCAL_BRANCH_BOT")
         		OUT=$?
         		if [[ $OUT -eq 0 ]] ; then
-					print_msg_newline ""
+					log_empty
 					log_success "PokemonGo-Bot has been updated"
-					print_msg_newline ""
+					log_empty
 					# update requirements after update
 					activate_virtualenv
 					update_req
@@ -890,7 +936,7 @@ update_bot() {
 					BOT_UPDATE=0
 					log_done
 					log_msg "Restarting wrapper..."
-    print_msg_newline ""
+    log_empty
 					sleep 2
 					exec ./start.sh
 				else
@@ -900,20 +946,20 @@ update_bot() {
 					REMOTE_BOT=""
 					BOT_UPDATE=0
 					log_done
-					print_msg_newline ""
+					log_empty
 					log_failure "PokemonGo-Bot update failed"
-					print_msg_newline ""
+					log_empty
 					log_msg "Restarting wrapper..."
-    print_msg_newline ""
+    log_empty
 					cd ..
 					sleep 2
 					exec ./start.sh
 				fi
  				;;
         	n|N) 
-				print_msg_newline ""
+				log_empty
 				log_failure "Update aborted"
-				print_msg_newline ""
+				log_empty
 				cd ..
 				log_msg "Resetting bot variables..."
 				LOCAL_BRANCH_BOT=""
@@ -943,10 +989,10 @@ update_wrapper() {
 	print_banner "Updating PokemonGo-Bot wrapper in progress"
 	log_msg "Checking branch..."
 	if [[ "$LOCAL_BRANCH" != "$GITHUBBRANCH" ]]; then
-		print_msg_newline ""
-		print_msg_newline ""
+		log_empty
+		log_empty
 		printf '%s\t%s\n' "WARNING: You're currently using $CURBRANCH branch, and this is not the default $GITHUBBRANCH branch."
-		print_msg_newline ""
+		log_empty
 		press_enter
 		return 0
 	fi
@@ -954,8 +1000,8 @@ update_wrapper() {
 	log_msg "Fetching current version..."
 	git fetch -q "$REPO" "$GITHUBBRANCH"
 	if [[ "$LOCAL_WRAPPER" != "$REMOTE_WRAPPER" ]]; then
-		print_msg_newline ""
-		print_msg_newline ""
+		log_empty
+		log_empty
 		print_msg_newline "Found new version!"
 		print_msg_newline "Changelog:"
 		print_msg_newline "=========="
@@ -966,38 +1012,38 @@ update_wrapper() {
 		done < <(git --no-pager log --abbrev-commit --decorate --date=relative --pretty=format:'%C(bold red)%h%Creset %C(bold green)(%cr)%Creset - %C(bold yellow)%s%Creset %C(bold blue)commited by%Creset %C(bold cyan)%an%Creset' "$LOCAL_WRAPPER..$REMOTE_WRAPPER")
 		print_msg_newline "=========="
     	print_msg_newline "There is a difference of $COUNT commits between your version and the version on github"
-		print_msg_newline ""
+		log_empty
 		print_msg_newline "Continue updating PokemonGo-Bot_wrapper_osx?"
-		print_msg_newline ""
+		log_empty
 		read -p "Y/N: " CHOICE
 		case "$CHOICE" in
         	y|Y) 		
-				git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (print_msg_newline ""; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; print_msg_newline ""; press_enter; print_msg_newline ""; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
+				git pull -q "$REPO" "$GITHUBBRANCH" >/dev/null 2>&1 || (log_empty; printf '%s\t%s\n' "WARNING:" "PokemonGo-Bot_wrapper_osx could not apply update due to conflicts, forced update mode will be used now."; printf '\t\t%s\n' "Please make proper backups if you need any of your past projects before going to the next step"; log_empty; press_enter; log_empty; git reset -q --hard; git clean -qfd; git pull -q "$REPO" "$GITHUBBRANCH")
         		OUT=$?
         		if [[ $OUT -eq 0 ]] ; then
-					print_msg_newline ""
+					log_empty
 					log_success "PokemonGo-Bot_wrapper_osx has been updated"
-					print_msg_newline ""
+					log_empty
 					log_msg "Restarting wrapper..."
-    print_msg_newline ""
+    log_empty
 					sleep 2
 					exec ./start.sh
 				else
-					print_msg_newline ""
+					log_empty
 					log_failure "PokemonGo-Bot_wrapper_osx update failed"
-					print_msg_newline ""
+					log_empty
 					log_msg "Restarting wrapper..."
-    print_msg_newline ""
+    log_empty
 					sleep 2
 					exec ./start.sh
 				fi
  				;;
         	n|N) 
-				print_msg_newline ""
+				log_empty
 				log_failure "Update aborted"
-				print_msg_newline ""
+				log_empty
 				log_msg "Restarting wrapper..."
-    print_msg_newline ""
+    log_empty
 				sleep 2 
 				exec ./start.sh
 				;;
@@ -1010,11 +1056,7 @@ update_wrapper() {
 
 # core app
 start_up_checks
-log_msg "Inflating tmp dir..."
-if [[ ! -d $TMP_DIR ]] ; then
-	mkdir $TMP_DIR
-fi
-log_done
+inflate_directories
 while true ; do
 	menu_main
 done
