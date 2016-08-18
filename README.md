@@ -58,7 +58,7 @@ It should probably work.
 - automated tor configuration
 - automated proxychains configuration
 - tor usage config file for every account (changeable from the menu)
-- broken batch start and star menu fixed
+- broken batch start and start menu fixed
 - fancy colors
 - much more
 
