@@ -737,9 +737,6 @@ start_bot_file() {
 	export COUNTRY=""
 	export SELF_CHOSEN=""
     config_wrapper
-    echo "$PROXY_THIS_BOT"
-    echo "$COUNTRY"
-    echo "$SELF_CHOSEN"
     TMP_FILE="$CMD_DIR/$ACTIVE_CONFIG.command"
 	if [[ $PROXY_THIS_BOT == y ]] ; then
 		proxy_bot
