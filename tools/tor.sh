@@ -248,7 +248,7 @@ tor_configurator() {
 				NODE_CHOICE=$line
 			done <$NODE_DIR/chosen_nodes
 			chosen_node
-			head -1 $NODE_DIR/chosen_nodes >>$NODE_DIR/used_nodes
+			head -2 $NODE_DIR/chosen_nodes >>$NODE_DIR/used_nodes
 			TOR_CONF=$PWD/$TOR_CFG/torrc.$COUNT_SCND			
 			tor_command
 		fi

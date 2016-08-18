@@ -68,7 +68,7 @@ export PROXY_CONF=""
 export TOR_CONF=""
 
 # requirements arrays
-TOOLS=(brew git python pip virtualenv wget ghead tor proxychains4) 
+TOOLS=(brew git python pip virtualenv wget ghead gdate gstats tor proxychains4) 
 MISSINGTOOLS=()
 
 # colors
