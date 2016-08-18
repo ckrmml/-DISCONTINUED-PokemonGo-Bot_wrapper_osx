@@ -15,31 +15,27 @@ This script will (at least try to):
 - [x] install and update requirements (from requirements.txt)
 - [x] install and update submodule 
 - [x] install libencrypt.so
-- [x] install unmet requirements (Python, Homebrew, virtualenv, pip, git)
+- [x] install unmet requirements (Python, Homebrew, virtualenv, pip, git, protobuf, tor, coreutils, proxychains)
 - [x] initialise and activate Python virtualenv 
 - [x] start a single account (if there is only one, it will get startet automatically)
 - [x] start selection of accounts
 - [x] start all accounts
 - [x] start web server
+- [x] create a config file for every account you have so you have to configure tor only once
+- [x] allow you to change the config file
+- [x] create proxychains config file (tor controlport and subnet)
+- [x] create tor config file (random socksport and controlport, every tor instance gets it's own data dir)
+- [x] proxy your bot over tor
+- [x] leave all configuration except exit country to tor
+- [x] force tor to use given exit nodes (you can choose how many)
 - [x] update bot
 - [x] update itself
 
 Edit your configuration files and simply choose which accounts the bot should be playing.
 
-As this script will always download the latest commit, your old configuration files might no longer work. If you want an older commit of the 
-bot, or already have one installed, just copy it over there and it should probably work.
-
-###**Requirements for PokemonGo-Bot you still have to install by yourself**
-
-- protobuf 3 -> brew update && brew install --devel protobuf
-
-**-> protobuf 3 installation needs [Homebrew](http://brew.sh).**
-
-```
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-```
-
-in your terminal.
+As this script will always download the latest commit, your old configuration files might no longer work. 
+If you want an older commit of the bot, or already have one installed, just copy it over there. 
+It should probably work.
 
 ###**USAGE**
 - download zip or clone
@@ -57,6 +53,15 @@ in your terminal.
 **see wiki for an usage example**
 
 ###**ChangeLog**
+####**v0.6**
+- script can proxy your bot over tor with proxychains
+- automated tor configuration
+- automated proxychains configuration
+- tor usage config file for every account (changeable from the menu)
+- broken batch start and star menu fixed
+- fancy colors
+- much more
+
 ####**v0.5**
 - script installs requirements if not met (Python, Homebrew, virtualenv, pip, git)
 - script installs libencrypt.so
