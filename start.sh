@@ -67,6 +67,10 @@ export TOR_DATA=tools/tor_data
 export EXIT_TMP=exit_nodes
 export PROXY_CONF=""
 export TOR_CONF=""
+export COUNTRY_CHOICE=""
+export NODE_TMP=""
+export CC_EXIT_NODES=""
+export VALID_EXIT_NODES=""
 
 # requirements arrays
 TOOLS=(brew git python pip virtualenv wget ghead gdate gstat tor proxychains4) 
@@ -245,14 +249,14 @@ config_wrapper() {
 		if [[ $PROXY_THIS_BOT == Y ]] || [[ $PROXY_THIS_BOT == y ]] ; then
 			clear
 			print_banner "Configuration"
-			print_msg_newline "Please choose a country for the TOR exit node"
-			log_empty
-			read -p "[Country]: " COUNTRY
-			clear
-			print_banner "Configuration"
 			print_msg_newline "Would you like TOR to configure itself?"
 			log_empty
 			read -p "[Y/N]: " SELF_CHOSEN
+			clear
+			print_banner "Configuration"
+			print_msg_newline "Please choose a country for the TOR exit node"
+			log_empty
+			read -p "[Country]: " COUNTRY
 			if [[ $SELF_CHOSEN == N ]] || [[ $SELF_CHOSEN == n ]] ; then
 				clear
 				print_banner "Configuration"
@@ -261,6 +265,8 @@ config_wrapper() {
 				log_empty
 				read -p "[Any number]: " EXIT_NODES
 				log_empty
+			else 
+				EXIT_NODES=0
 			fi
 		fi
 		touch $TMP_CFG
@@ -268,9 +274,7 @@ config_wrapper() {
 		if [[ $PROXY_THIS_BOT == Y ]] || [[ $PROXY_THIS_BOT == y ]] ; then
 			echo "COUNTRY=$COUNTRY" >> $TMP_CFG
 			echo "SELF_CHOSEN=$SELF_CHOSEN" >> $TMP_CFG
-			if [[ $SELF_CHOSEN == N ]] || [[ $SELF_CHOSEN == n ]] ; then
-				echo "EXIT_NODES=$EXIT_NODES" >> $TMP_CFG
-			fi
+			echo "EXIT_NODES=$EXIT_NODES" >> $TMP_CFG
 		fi
 		chmod +x $TMP_CFG
 	else
@@ -576,14 +580,26 @@ menu_main() {
 			print_command s "Start PokemonGo-Bot"
 			print_command w "Start web interface"
 			if [[ $BOT_UPDATE -eq 1 ]] && [[ $WRAPPER_UPDATE -eq 1 ]] ; then
+				rule_broken
 				print_command u "Update menu"
         	elif [[ $BOT_UPDATE -eq 1 ]] && [[ $WRAPPER_UPDATE -eq 0 ]] ; then
+				rule_broken
 				print_command u "Update bot"
         	elif [[ $BOT_UPDATE -eq 0 ]] && [[ $WRAPPER_UPDATE -eq 1 ]] ; then
+				rule_broken
 				print_command u "Update wrapper"
         	fi
 		fi
 	fi
+	if [[ -n "$(find tools/bot_config -maxdepth 1 -name '*.config' -print -quit)" ]] ; then
+		if [[ $BOT_UPDATE -eq 1 || $WRAPPER_UPDATE -eq 1 ]]; then
+			print_command t "Change wrapper configuration file(s)"
+		else
+			rule_broken
+			print_command t "Change wrapper configuration file(s)"	
+		fi
+	fi
+	rule_broken
 	print_command r "Restart wrapper"
 	print_command x "Quit"
 	rule
@@ -609,6 +625,7 @@ menu_main() {
 			init_sub
 			cd ..
 			exec ./start.sh ;;
+		t|T) menu_wrapper_config_choice ;;
         r|R) exec ./start.sh ;;
         x|X) exit 0 ;;
     esac
@@ -620,7 +637,9 @@ menu_start() {
     file_list=()
 	print_banner "Start bot(s)"
     log_msg "Searching for configuration files you've created in the past..."
-    log_empty
+	log_empty
+	rule
+	log_empty
     print_msg_newline "=-=-=-=-=-=-=-=-=-==-=-=-="
  	while IFS= read -d $'\0' -r file ; do     
  		((COUNT++))
@@ -628,8 +647,13 @@ menu_start() {
 	printf '%s\n' "$(basename "${file_list[@]}")"
  	done < <(find PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -not -iname "*path*" -maxdepth 1 -print0) # Avoid a subshell, because we must remember variables
     print_msg_newline "=-=-=-=-=-=-=-=-=-==-=-=-="
-    print_msg_newline "$COUNT config files were found"
 	log_empty
+    print_msg_newline "$COUNT config files were found"
+	rule
+    if [[ "$COUNT" -eq 1 ]]; then
+        ACTIVE_CONFIG="$(basename "${file_list[@]}")" # If we have only one database, there's nothing to choose from, so we can save some precious seconds
+		start_bot_file
+    fi
     read -p "Please choose (x to return): " CHOICE
 	log_empty
 	case "$CHOICE" in
@@ -665,6 +689,7 @@ menu_update() {
 	if [[ $WRAPPER_UPDATE -eq 1 ]] ; then
 		print_command w "Update wrapper"
 	fi
+	broken_rule
 	print_command x "Return"
 	rule
 	read -p "Please choose: " CHOICE
@@ -675,10 +700,101 @@ menu_update() {
     esac
 }
 
-menu_wrapper_config() {
+menu_wrapper_config_choice() {
 	clear 
+	local COUNT=0
+    file_list=()
 	print_banner "Change wrapper configuration file(s)"
-	
+    log_msg "Searching for configuration files you've created in the past..."
+	log_empty
+	rule
+	log_empty
+    print_msg_newline "=-=-=-=-=-=-=-=-=-==-=-=-="
+ 	while IFS= read -d $'\0' -r file ; do     
+ 		((COUNT++))
+     	file_list[$i]=$file
+	printf '%s\n' "$(basename "${file_list[@]}")"
+ 	done < <(find tools/bot_config -type f -iname "*.config" -maxdepth 1 -print0) # Avoid a subshell, because we must remember variables
+    print_msg_newline "=-=-=-=-=-=-=-=-=-==-=-=-="
+    print_msg_newline "$COUNT config files were found"
+    if [[ "$COUNT" -eq 1 ]]; then
+        CONFIG="$(basename "${file_list[@]}")" # If we have only one database, there's nothing to choose from, so we can save some precious seconds
+		menu_wrapper_config
+    fi
+	log_empty
+	rule
+    read -p "Please choose (x to return): " CONFIG
+    case $CONFIG in
+    	x|X) return 0 ;;
+    	*) menu_wrapper_config ;;
+	esac
+}
+
+menu_wrapper_config() {	
+	clear
+	local EXIT_NODES=""
+	local COUNTRY=""
+	local SELF_CHOSEN=""
+	local PROXY_THIS_BOT=""
+	source $BOT_CFG/$CONFIG
+	print_banner "Change $CONFIG configuration file(s)"
+	if [[ $PROXY_THIS_BOT == Y ]] || [[ $PROXY_THIS_BOT == y ]] ; then
+		log_msg "At the moment the bot gets proxied through TOR"
+		log_empty
+	else
+		log_msg "At the moment the bot does not get proxied through TOR"
+		log_empty
+	fi
+	if [[ $SELF_CHOSEN == Y ]] || [[ $SELF_CHOSEN == y ]] ; then
+		log_msg "At the moment TOR does configure itself"
+		log_empty
+	else
+		log_msg "At the moment TOR does not configure itself"
+		log_empty
+	fi
+	log_msg "At the moment TOR exits in $COUNTRY"
+	log_empty
+ 	if [[ $SELF_CHOSEN == N ]] || [[ $SELF_CHOSEN == n ]] ; then
+		log_msg "At the moment TOR has $EXIT_NODES exit nodes"
+		log_empty
+	fi
+	rule
+	print_command t "Change if bot should get proxied through TOR"
+	print_command s "Change if TOR should configure itself"
+	print_command c "Change exit country"
+	if [[ $SELF_CHOSEN == n ]] || [[ $SELF_CHOSEN == N ]] ; then
+		print_command e "Change exit node number"
+	fi
+	rule_broken
+	print_command o "Change another config file"
+	print_command x "Return"
+	rule
+	read -p "Please choose: " CHOICE
+    case "$CHOICE" in
+        t|T) 
+ 			if [[ $PROXY_THIS_BOT == Y ]] || [[ $PROXY_THIS_BOT == y ]] ; then
+		       	./tools/config.pl PROXY_THIS_BOT=n $PWD/$BOT_CFG/$CONFIG
+		       	menu_wrapper_config
+			else
+       			./tools/config.pl PROXY_THIS_BOT=y $PWD/$BOT_CFG/$CONFIG
+       			menu_wrapper_config
+			fi
+         	;;
+        s|S) 
+ 			if [[ $SELF_CHOSEN == Y ]] || [[ $SELF_CHOSEN == y ]] ; then
+		       	./tools/config.pl SELF_CHOSEN=n $PWD/$BOT_CFG/$CONFIG
+		       	menu_wrapper_config
+			else
+       			./tools/config.pl SELF_CHOSEN=y $PWD/$BOT_CFG/$CONFIG
+       			menu_wrapper_config
+			fi
+         	;;
+
+        c|C) update_exit ;;
+        e|E) update_nodes ;;
+        o|O) menu_wrapper_config_choice ;;
+        x|X) exec ./start.sh ;;
+    esac	
 }
 
 no_update_found() {
@@ -725,7 +841,7 @@ print_command() {
 
 print_hu() {
 	if [[ -d ./PokemonGo-Bot ]] ; then
-		printf '%s\n' "You are currently on [${YELLOW}"$LOCAL_BRANCH_BOT"${NORMAL}] branch of PokemonGo-Bot"
+		printf '%s\n' "${WHITE}You are currently on [${YELLOW}"$LOCAL_BRANCH_BOT"${WHITE}] branch of PokemonGo-Bot${NORMAL}"
 		if [[ $BOT_UPDATE -eq 1 ]]; then
 			print_msg "${BLUE}"
 			print_msg " -> "
@@ -771,6 +887,10 @@ print_msg_newline() {
 
 rule() {
 	printf -v _hr "%*s" $(tput cols) && echo ${_hr// /${1--}}
+}
+
+rule_broken() {
+	printf -v _hr "%*s" $(($(tput cols)/2)) && echo ${_hr// /${1- -}}
 }
 
 setup_virtualenv() {
@@ -936,7 +1056,7 @@ update_bot() {
 					BOT_UPDATE=0
 					log_done
 					log_msg "Restarting wrapper..."
-    log_empty
+    				log_empty
 					sleep 2
 					exec ./start.sh
 				else
@@ -950,7 +1070,7 @@ update_bot() {
 					log_failure "PokemonGo-Bot update failed"
 					log_empty
 					log_msg "Restarting wrapper..."
-    log_empty
+    				log_empty
 					cd ..
 					sleep 2
 					exec ./start.sh
@@ -977,6 +1097,48 @@ update_bot() {
 		cd ..
 		exec ./start.sh
 	fi
+}
+update_exit() {
+	clear
+	print_banner "Change TOR exit country for bot $CONFIG"
+	local COUNTRY=""
+	source $BOT_CFG/$CONFIG
+	print_msg_newline "At the moment TOR exits in $COUNTRY"
+	rule
+	log_msg "Just enter a name"
+	log_empty
+	rule
+	read -p "Please choose: " N_COUNTRY
+	case "$N_COUNTRY" in
+		x) menu_wrapper_config ;;
+		*)
+		   ./tools/config.pl COUNTRY=$N_COUNTRY $PWD/$BOT_CFG/$CONFIG
+		   menu_wrapper_config
+		   ;;
+	esac
+}
+
+update_nodes() {
+	clear
+	print_banner "Change number of TOR exit nodes for bot $CONFIG"
+	local EXIT_NODES=""
+	source $BOT_CFG/$CONFIG
+	print_msg_newline "At the moment TOR has $EXIT_NODES exit nodes"
+	rule
+	log_msg "Just enter a number greater than 0"
+	log_empty
+	log_msg "Foolproof is for loosers, so really enter a number else it won't work"
+	log_empty
+	rule
+	read -p "Please choose: " NODE
+	case $NODE in
+		x) menu_wrapper_config ;;
+		*)
+			./tools/config.pl EXIT_NODES=$NODE $PWD/$BOT_CFG/$CONFIG 
+    		menu_wrapper_config
+    		;;
+    esac
+
 }
 
 update_req() {
@@ -1025,7 +1187,7 @@ update_wrapper() {
 					log_success "PokemonGo-Bot_wrapper_osx has been updated"
 					log_empty
 					log_msg "Restarting wrapper..."
-    log_empty
+    				log_empty
 					sleep 2
 					exec ./start.sh
 				else
@@ -1033,7 +1195,7 @@ update_wrapper() {
 					log_failure "PokemonGo-Bot_wrapper_osx update failed"
 					log_empty
 					log_msg "Restarting wrapper..."
-    log_empty
+    				log_empty
 					sleep 2
 					exec ./start.sh
 				fi
@@ -1043,7 +1205,7 @@ update_wrapper() {
 				log_failure "Update aborted"
 				log_empty
 				log_msg "Restarting wrapper..."
-    log_empty
+    			log_empty
 				sleep 2 
 				exec ./start.sh
 				;;
