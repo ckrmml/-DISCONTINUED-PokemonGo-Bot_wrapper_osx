@@ -72,6 +72,28 @@ export NODE_TMP=""
 export CC_EXIT_NODES=""
 export VALID_EXIT_NODES=""
 
+# bot config variables
+export AUTH_SERVICE=""
+export USERNAME=""
+export PASS=""
+export LOCATION=""
+export API_KEY=""
+export WEBSOCKET_SERVER=""
+export ALT_MAX=""
+export ALT_MIN=""
+export DAILY_CATCH_LIMIT=""
+export DEBUG=""
+export DISTANCE_UNIT=""
+export HEALTH_RECORD=""
+export HEARTBEAT_TRESHOLD=""
+export LOCATION_CACHE=""
+export LOGGING_COLOR=""
+export MAP_OBJECT_CACHE_TIME=""
+export RECONNECTING_TIMEOUT=""
+export TEST=""
+export WALK_MAX=""
+export WALK_MIN=""
+
 # requirements arrays
 TOOLS=(brew git python pip virtualenv wget ghead gdate gstat tor proxychains4) 
 MISSINGTOOLS=()
@@ -284,6 +306,186 @@ config_wrapper() {
 	fi
 }
 
+create_config() {
+	clear
+	print_banner "Create bot config file"
+	print_command l "Login section"
+	print_command r "Random settings section"
+	print_command t "Tasks section"
+	print_command c "Catch section"
+	print_command r "Release section"
+	broken_rule
+	print_command x "Return"
+	read -p "Please choose: " CHOICE
+	case $CHOICE in
+		l|L) login_section ;;
+		r|R) random_section ;;
+		t|T) task_section ;;
+		c|C) catch_section ;;
+		r|R) release_section ;;
+	esac
+}
+
+login_section() {	
+	clear
+	print_banner "Create bot config file"	
+	log_empty
+	print_msg_newline "Now editing login section"
+	log_empty
+	rule
+	log_header "Please enter your authentication service"
+	rule
+	read -p "google/ptc: " AUTH_SERVICE
+	log_empty
+	rule
+	log_header "Please enter your username"
+	rule
+	read -p "Username: " USERNAME
+	log_empty
+	rule
+	log_header "Please enter your password"
+	rule
+	read -p "Password: " -s PASS
+	log_empty
+	log_empty
+	rule
+	log_header "Please enter your location"
+	rule
+	read -p "Location: " LOCATION
+	log_empty
+	rule
+	log_header "Please enter your google maps api key"
+	rule
+	read -p "GMaps API Key: " API_KEY
+	log_empty
+	rule
+}
+
+random_section() {
+	clear
+	print_banner "Create bot config file"
+	log_empty
+	print_msg_newline "Now editing random config section"
+	log_empty
+	rule
+	log_header "Do you use a websocket server?"
+	rule
+	read -p "Y/N: " ws
+	case $ws in
+		y|Y) WEBSOCKET_SERVER=true ;;
+		n|N) WEBSOCKET_SERVER=false	;;
+	esac
+	log_empty
+	rule
+	log_header "Please choose heartbeat treshold"
+	log_msg "Standard is 10"
+	log_empty
+	rule
+	read -p "Any number: " HEARTBEAT_TRESHOLD
+	log_empty
+	rule
+	log_header "Please choose map object cache time"
+	log_msg "Standard is 5"
+	log_empty
+	rule
+	read -p "Map object cache time: " MAP_OBJECT_CACHE_TIME
+	log_empty
+	rule
+	log_header "Please choose walking speed"
+	print_msg_newline "Standards:"
+	log_msg "Maximum standard is 4.16"
+	log_empty
+	log_msg "Minimum standard is 2.16"
+	log_empty
+	log_msg "Alternation minimum standard is 0.75"
+	log_empty
+	log_msg "Alternation maximum standard is 2.5"
+	log_empty
+	rule
+	read -p "Max: " WALK_MAX
+	read -p "Min: " WALK_MIN
+	read -p "Alt. min: " ALT_MIN
+	read -p "Alt. max: " ALT_MAX
+	log_empty
+	rule
+	log_header "Would you like to enable debug mode?"
+	log_msg "Standard is off"
+	log_empty
+	rule
+	read -p "Y/N: " de
+	case $de in
+		y|Y) DEBUG=true ;;
+		n|N) DEBUG=false ;;
+	esac
+	log_empty
+	rule
+	log_header "Would you like to enable test mode?"
+	log_msg "Standard is off. Some dev option, leave disabled if you do not develop"
+	log_empty
+	rule
+	read -p "Y/N: " te
+	case $te in
+		y|Y) TEST=true ;;
+		n|N) TEST=false ;;
+	esac
+	log_empty
+	rule
+	log_header "Would you like to enable health record?"
+	log_msg "Sends data about bot failures back to developers"
+	log_empty
+	rule
+	read -p "Y/N: " hr
+	case $he in
+		y|Y) HEALTH_RECORD=true ;;
+		n|N) HEALTH_RECORD=false ;;
+	esac
+	log_empty
+	rule
+	log_header "Would you like to enable location cache?"
+	log_msg "Standard is on"
+	log_empty
+	rule
+	read -p "Y/N: " lc
+	case $lc in
+		y|Y) LOCATION_CACHE=true ;;
+		n|N) LOCATION_CACHE=false ;;
+	esac
+	log_empty
+	rule
+	log_header "Please choose a distance unit"
+	log_msg "km for kilometers, mi for miles, ft for feet"
+	log_empty
+	rule
+	read -p "Unit: " DISTANCE_UNIT
+	log_empty
+	rule
+	log_header "Please enter a reconnection timeout time"
+	log_msg "Standard is 15"
+	log_empty
+	rule
+	read -p "Any number: " RECONNECTING_TIMEOUT
+	log_empty
+	rule
+	log_header "Would you like the bot to log with colors?"
+	rule
+	read -p "Y/N: " cl
+	case $cl in
+		y|Y) LOGGING_COLOR=true ;;
+		n|N) LOGGING_COLOR=false ;;
+	esac
+	log_empty
+	rule
+	log_header "Would you like to set a daily catch limit?"
+	log_msg "Standard is 800"
+	log_empty
+	rule
+	read -p "Any number: " dcl
+	case $dcl in
+		y|Y) DAILY_CATCH_LIMIT=true ;;
+		n|N) DAILY_CATCH_LIMIT=false ;;
+	esac
+}	
+	
 debug_screen() {
 echo "BRANCH=$BRANCH" # dev or master
 echo "ACTIVE_CONFIG=$ACTIVE_CONFIG" # account to start
@@ -380,6 +582,7 @@ install_lib_crypt() {
 	done_or_fail
 	log_msg "Cleaning up..."
 	rm -rf $TMP_DIR/pgoencrypt
+	rm -rf $TMP_DIR/pgoencrypt.tar.gz
 	done_or_fail
 	log_success "Installation of encrypt.so complete"
 	log_msg "Restarting wrapper..." 
@@ -504,9 +707,47 @@ log_success() {
 }
 
 menu_bot_config() {
- echo "Nothing yet"
- return 1
+	clear
+	print_banner "Create/change bot configuration file(s)"
+	if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
+		create_config
+	else
+		print_command c "Create_config"
+		print_command e "Edit config"
+		rule_broken
+		print_command x "Return"
+		rule
+		read -p "Please choose: " CHOICE
+		case $CHOICE in
+			c) create_config ;;
+			e) edit_config ;;
+			x) exec .start.sh ;;
+		esac
+	fi
 }
+#	cd $pokebotpath
+#read -p "enter 1 for google or 2 for ptc 
+#" auth
+#read -p "Input username 
+#" username
+#read -p "Input password 
+#" -s password
+#read -p "
+#Input location 
+#" location
+#read -p "Input gmapkey 
+#" gmapkey
+#cp -f configs/config.json.example configs/config.json && chmod 755 configs/config.json
+#if [ "$auth" = "2" ] || [ "$auth" = "ptc" ]
+#then
+#sed -i "s/google/ptc/g" configs/config.json
+#fi
+#sed -i "s/YOUR_USERNAME/$username/g" configs/config.json
+#sed -i "s/YOUR_PASSWORD/$password/g" configs/config.json
+#sed -i "s/SOME_LOCATION/$location/g" configs/config.json
+#sed -i "s/GOOGLE_MAPS_API_KEY/$gmapkey/g" configs/config.json
+#echo "Edit ./configs/config.json to modify any other config."
+#}
 
 menu_branch() {
 	clear
@@ -540,45 +781,55 @@ menu_main() {
 		rule
 		print_command i "Choose and install PokemonGo-Bot branch"
 	fi
-	if [[ -d ./PokemonGo-Bot ]] && [[ -f ./tools/clone ]] ; then
+	if [[ -d ./PokemonGo-Bot ]] ; then
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
-			rule
-			log_empty
-			printf '\t%s\n' "Please go to "
-			log_empty
-			printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
-			log_empty
-			printf '\t%s\n' "and create a configuration file to continue."
-			printf '\t%s\n' "After you have done this, please enter 'r' "
-			printf '\t%s\n' "or 'R' as choice or restart the wrapper."
-			log_empty
-			rule
-		fi
-	elif [[ -d ./PokemonGo-Bot ]] && [[ ! -f ./tools/clone ]] ; then
-		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
-			rule
-			log_empty
-			printf '\t%s\n' "Please go to "
-			log_empty
-			printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
-			log_empty
-			printf '\t%s\n' "and create a configuration file to continue."
-			printf '\t%s\n' "After you have done this, please enter 'r' "
-			printf '\t%s\n' "or 'R' as choice or restart the wrapper."
-			log_empty
-		else
-			rule
-			log_empty
-			printf '\t%s\n' "It looks like you copied over an instance of the bot you had installed before."
-			printf '\t%s\n' "If starting a bot does not work, try entering setup as choice."
-			log_empty
-		fi
-	fi
-	if [[ -d PokemonGo-Bot ]] && [[  -f ./PokemonGo-Bot/encrypt.so ]] ; then
-		if [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
+			if [[ -f ./tools/clone ]] ; then
+				rule
+#				log_empty
+#				printf '\t%s\n' "Please go to "
+#				log_empty
+#				printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
+#				log_empty
+#				printf '\t%s\n' "and create a configuration file to continue."
+#				printf '\t%s\n' "After you have done this, please enter 'r' "
+#				printf '\t%s\n' "or 'R' as choice or restart the wrapper."
+#				log_empty
+#				rule
+				print_command c "Create bot config"
+			elif [[ ! -f ./tools/clone ]] ; then
+				rule
+#				log_empty
+#				printf '\t%s\n' "Please go to "
+#				log_empty
+#				printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
+#				log_empty
+#				printf '\t%s\n' "and create a configuration file to continue."
+#				printf '\t%s\n' "After you have done this, please enter 'r' "
+#				printf '\t%s\n' "or 'R' as choice or restart the wrapper."
+#				log_empty
+				rule
+				log_empty
+				printf '\t%s\n' "It looks like you copied over an instance of the bot you had installed before."
+				printf '\t%s\n' "If starting a bot does not work, try entering setup as choice."
+				printf '\t%s\n' "To disable this message, enter clone as choice."
+				log_empty
+				rule
+				print_command c "Create bot config"
+			fi
+		elif [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			rule
 			print_command s "Start PokemonGo-Bot"
 			print_command w "Start web interface"
+			rule_broken
+			print_command c "Create/edit bot config"
+			if [[ -n "$(find tools/bot_config -maxdepth 1 -name '*.config' -print -quit)" ]] ; then
+				if [[ -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
+					print_command t "Change wrapper configuration file(s)"
+				else
+					rule_broken
+					print_command t "Change wrapper configuration file(s)"	
+				fi
+			fi
 			if [[ $BOT_UPDATE -eq 1 ]] && [[ $WRAPPER_UPDATE -eq 1 ]] ; then
 				rule_broken
 				print_command u "Update menu"
@@ -589,14 +840,6 @@ menu_main() {
 				rule_broken
 				print_command u "Update wrapper"
         	fi
-		fi
-	fi
-	if [[ -n "$(find tools/bot_config -maxdepth 1 -name '*.config' -print -quit)" ]] ; then
-		if [[ $BOT_UPDATE -eq 1 || $WRAPPER_UPDATE -eq 1 ]]; then
-			print_command t "Change wrapper configuration file(s)"
-		else
-			rule_broken
-			print_command t "Change wrapper configuration file(s)"	
 		fi
 	fi
 	rule_broken
@@ -617,12 +860,18 @@ menu_main() {
         	fi
         	;;
         w|W) start_web_file ;;
+        c|C) menu_bot_config ;;
         setup) 
 			cd "PokemonGo-Bot"
 			setup_virtualenv
 			activate_virtualenv
 			install_pip_req
 			init_sub
+			cd ..
+			exec ./start.sh ;;
+		clone)
+			cd tools
+			touch clone
 			cd ..
 			exec ./start.sh ;;
 		t|T) menu_wrapper_config_choice ;;
