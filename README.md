@@ -44,8 +44,11 @@ It should probably work.
 - ./start.sh
 
 **batch start all accounts**
+
 	- enter ```[a]``` or ```[A]``` as choice,
+
 **batch start a selection**
+
 	- enter the names of the accounts separated by a space like this 
 	```ACCOUNT_1_config.json ACCOUNT_2_config.json ...```
 
