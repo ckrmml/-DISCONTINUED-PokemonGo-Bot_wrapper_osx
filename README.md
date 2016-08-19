@@ -45,12 +45,12 @@ It should probably work.
 
 **batch start all accounts**
 
-	- enter ```[a]``` or ```[A]``` as choice,
+- enter ```[a]``` or ```[A]``` as choice,
 
 **batch start a selection**
 
-	- enter the names of the accounts separated by a space like this 
-	```ACCOUNT_1_config.json ACCOUNT_2_config.json ...```
+- enter the names of the accounts separated by a space like this 
+```ACCOUNT_1_config.json ACCOUNT_2_config.json ...```
 
 
 **see wiki for an usage example**
