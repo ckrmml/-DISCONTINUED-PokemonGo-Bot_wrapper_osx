@@ -72,12 +72,16 @@ export NODE_TMP=""
 export CC_EXIT_NODES=""
 export VALID_EXIT_NODES=""
 
-# bot config variables
+## bot config variables
+# login section
+export WRITE_LOGIN=0
 export AUTH_SERVICE=""
 export USERNAME=""
 export PASS=""
 export LOCATION=""
 export API_KEY=""
+# random section
+export WRITE_RANDOM=0
 export WEBSOCKET_SERVER=""
 export ALT_MAX=""
 export ALT_MIN=""
@@ -93,6 +97,11 @@ export RECONNECTING_TIMEOUT=""
 export TEST=""
 export WALK_MAX=""
 export WALK_MIN=""
+export AVOID_CIRCLES=""
+export CACHE_RECENT_FORTS=""
+export SHOW_AT_START=""
+export SHOW_COUNT=""
+POKEMON_INFO=() # array needed because there are 9 options
 
 # requirements arrays
 TOOLS=(brew git python pip virtualenv wget ghead gdate gstat tor proxychains4) 
@@ -112,7 +121,7 @@ BRIGHT=$(tput bold)
 NORMAL=$(tput sgr0)
 
 # modules
-source tools/tor.sh
+source tools/tor.sh # the tor functions
 
 ## script functions
 activate_virtualenv() {
@@ -121,17 +130,17 @@ activate_virtualenv() {
 }
 
 batch_start() {
-	for CONFIG in "${BATCH_ARRAY[@]}"; do 
-		ACTIVE_CONFIG="$CONFIG"
-        start_bot_file
+	for CONFIG in "${BATCH_ARRAY[@]}"; do # read configs out of array and
+		ACTIVE_CONFIG="$CONFIG" # pass single config to		
+        start_bot_file # start_bot_file, so every config gets handled solo				
     done
 }
 
 check_admin() {
 	log_msg "Checking if osx user is an admin..."
-	if id -G $1 | grep -q -w 80 ; then
+	if id -G $1 | grep -q -w 80 ; then 
 		print_msg_newline "[ADMIN]"
-		touch tools/admin
+		touch tools/admin # if this gets created the test won't be done again
 	else
 		local USER=$(whoami)
 		print_msg_newline "[FAIL]"
@@ -146,10 +155,10 @@ check_admin() {
 
 check_tools() {
 	log_msg "Checking PokemonGo-Bot requirements..."
-	if [[ "$(which "${TOOLS[@]}" >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then
+	if [[ "$(which "${TOOLS[@]}" >/dev/null; printf '%s\n' "$?")" -ne 0 ]] ; then # "which XYZ" every tool in array
 	    for TOOL in "${TOOLS[@]}"; do
-	        if [[ -z "$(which $TOOL)" ]]; then
-   	         	MISSINGTOOLS[$i]=$TOOL
+	        if [[ -z "$(which $TOOL)" ]]; then # if not there
+   	         	MISSINGTOOLS[$i]=$TOOL # add to missing tool array
    	         	i=$(($i+1))
    	     	fi
    		done
@@ -309,13 +318,23 @@ config_wrapper() {
 create_config() {
 	clear
 	print_banner "Create bot config file"
+	log_header "CONFIG FILE WILL BE CRAP"
+	log_failure "IF YOU START A SECTION AND DO NOT COMPLETE IT"
+	log_failure "IF YOU WANT TO LEAVE A VALUE AS IS AND DO NOT ENTER THE SHOWN STANDARD"
+	log_failure "IF YOU ENTER SOMETHING ELSE AS OPTED"
+	log_header "BE AWARE: NO ERROR CHECKING HERE!"
+	rule	
 	print_command l "Login section"
 	print_command r "Random settings section"
 	print_command t "Tasks section"
 	print_command c "Catch section"
 	print_command r "Release section"
-	broken_rule
+	rule_broken
+	print_command s "Show config selections"
+	print_command w "Write config"
+	rule_broken
 	print_command x "Return"
+	rule
 	read -p "Please choose: " CHOICE
 	case $CHOICE in
 		l|L) login_section ;;
@@ -323,42 +342,54 @@ create_config() {
 		t|T) task_section ;;
 		c|C) catch_section ;;
 		r|R) release_section ;;
+		s|S) show_config ;;
+		w|W) write_config ;;
+		X|X) return 0 ;;
 	esac
 }
 
 login_section() {	
 	clear
+	# fill variables with respective values
 	print_banner "Create bot config file"	
 	log_empty
 	print_msg_newline "Now editing login section"
 	log_empty
 	rule
+	
 	log_header "Please enter your authentication service"
 	rule
 	read -p "google/ptc: " AUTH_SERVICE
 	log_empty
 	rule
+	
 	log_header "Please enter your username"
 	rule
 	read -p "Username: " USERNAME
 	log_empty
 	rule
+	
 	log_header "Please enter your password"
 	rule
 	read -p "Password: " -s PASS
 	log_empty
-	log_empty
+	log_empty # double empty line because one isn't enough
 	rule
+	
 	log_header "Please enter your location"
 	rule
 	read -p "Location: " LOCATION
 	log_empty
 	rule
+	
 	log_header "Please enter your google maps api key"
 	rule
 	read -p "GMaps API Key: " API_KEY
 	log_empty
 	rule
+	
+	WRITE_LOGIN=1 # set write variable to 1 so write config knows this section should be written
+	create_config
 }
 
 random_section() {
@@ -368,6 +399,7 @@ random_section() {
 	print_msg_newline "Now editing random config section"
 	log_empty
 	rule
+	
 	log_header "Do you use a websocket server?"
 	rule
 	read -p "Y/N: " ws
@@ -377,6 +409,7 @@ random_section() {
 	esac
 	log_empty
 	rule
+	
 	log_header "Please choose heartbeat treshold"
 	log_msg "Standard is 10"
 	log_empty
@@ -384,6 +417,7 @@ random_section() {
 	read -p "Any number: " HEARTBEAT_TRESHOLD
 	log_empty
 	rule
+	
 	log_header "Please choose map object cache time"
 	log_msg "Standard is 5"
 	log_empty
@@ -391,6 +425,7 @@ random_section() {
 	read -p "Map object cache time: " MAP_OBJECT_CACHE_TIME
 	log_empty
 	rule
+	
 	log_header "Please choose walking speed"
 	print_msg_newline "Standards:"
 	log_msg "Maximum standard is 4.16"
@@ -408,6 +443,7 @@ random_section() {
 	read -p "Alt. max: " ALT_MAX
 	log_empty
 	rule
+	
 	log_header "Would you like to enable debug mode?"
 	log_msg "Standard is off"
 	log_empty
@@ -419,6 +455,7 @@ random_section() {
 	esac
 	log_empty
 	rule
+	
 	log_header "Would you like to enable test mode?"
 	log_msg "Standard is off. Some dev option, leave disabled if you do not develop"
 	log_empty
@@ -430,6 +467,7 @@ random_section() {
 	esac
 	log_empty
 	rule
+	
 	log_header "Would you like to enable health record?"
 	log_msg "Sends data about bot failures back to developers"
 	log_empty
@@ -441,6 +479,7 @@ random_section() {
 	esac
 	log_empty
 	rule
+	
 	log_header "Would you like to enable location cache?"
 	log_msg "Standard is on"
 	log_empty
@@ -452,6 +491,7 @@ random_section() {
 	esac
 	log_empty
 	rule
+	
 	log_header "Please choose a distance unit"
 	log_msg "km for kilometers, mi for miles, ft for feet"
 	log_empty
@@ -459,6 +499,7 @@ random_section() {
 	read -p "Unit: " DISTANCE_UNIT
 	log_empty
 	rule
+	
 	log_header "Please enter a reconnection timeout time"
 	log_msg "Standard is 15"
 	log_empty
@@ -466,6 +507,7 @@ random_section() {
 	read -p "Any number: " RECONNECTING_TIMEOUT
 	log_empty
 	rule
+	
 	log_header "Would you like the bot to log with colors?"
 	rule
 	read -p "Y/N: " cl
@@ -475,6 +517,7 @@ random_section() {
 	esac
 	log_empty
 	rule
+	
 	log_header "Would you like to set a daily catch limit?"
 	log_msg "Standard is 800"
 	log_empty
@@ -484,7 +527,97 @@ random_section() {
 		y|Y) DAILY_CATCH_LIMIT=true ;;
 		n|N) DAILY_CATCH_LIMIT=false ;;
 	esac
-}	
+	log_empty
+	rule
+	
+	log_header "Configure fort behaviour"
+	print_msg_newline "Standards:"
+	log_msg "Avoid circles is on"
+	log_empty
+	log_msg "Maximum circle size is 50"
+	log_empty
+	log_msg "Cache recent forts is on"
+	log_empty
+	rule
+	read -p "Avoid circles (Y/N): " ac
+	case $ac in
+		y|Y) AVOID_CIRCLES=true ;;
+		n|N) AVOID_CIRCLES=false ;;
+	esac
+	read -p "Max. circle size (number): " MAX_CIRCLE_SIZE
+	read -p "Cache recent forts (Y/N): " crf
+	case $crf in
+		y|Y) CACHE_RECENT_FORTS=true ;;
+		n|N) CACHE_RECENT_FORTS=false ;;
+	esac
+	log_empty
+	rule
+	
+	log_header "Configure if all the pokemons in the bag (not eggs) should be logged at bot start"
+	print_msg_newline "Standards:"
+	log_msg "Log at start is on"
+	log_empty
+	log_msg "Show count is off"
+	log_empty
+	log_msg "Infos are cp, iv_pct"
+	log_empty
+	rule
+	read -p "Log at start (Y/N): " las
+	case $las in
+		y|Y) SHOW_AT_START=true ;;
+		n|N) SHOW_AT_START=false ;;
+	esac
+	read -p "Show count (Y/N): " sc
+	case $sc in
+		y|Y) SHOW_COUNT=true ;;
+		n|N) SHOW_COUNT=false ;;
+	esac
+	log_msg "Options are: cp, iv_ads, iv_pct, ivcp, ncp, level, hp, moveset, dps"
+	log_empty
+	log_msg "Separate your choices by a space"
+	log_empty
+	read -p "Info options: " opt
+	for OPTION in $opt ; do
+		POKEMON_INFO[$i]=$OPTION
+		i=$(($i+1))
+	done
+#	printf '%s ' "${POKEMON_INFO[@]}"
+	WRITE_RANDOM=1
+	create_config
+}
+
+write_config() {
+	clear
+	print_banner "Writing bot configuration file"
+	if [[ WRITE_LOGIN -eq 1 ]] ; then
+		sed -e "s/google/$AUTH_SERVICE/g" -e "s/YOUR_USERNAME/$USERNAME/g" -e "s/YOUR_PASSWORD/$PASS/g" -e "s/SOME_LOCATION/$LOCATION/g" -e "s/GOOGLE_MAPS_API_KEY/$API_KEY/g" $PWD/PokemonGo-Bot/configs/config.json.example > $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json
+	fi
+	if [[ WRITE_RANDOM -eq 1 ]] ; then
+		tools/config.pl -s ":" -w "1" "    \"websocket_server\": $WEBSOCKET_SERVER," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "    \"heartbeat_threshold\": $HEARTBEAT_TRESHOLD," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "    \"walk_max\": $WALK_MAX," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "    \"walk_min\": $WALK_MIN," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "    \"alt_min\": $ALT_MIN," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "    \"alt_max\": $ALT_MAX," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "    \"debug\": $DEBUG," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "    \"test\": $TEST," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "	   \"health_record\": $HEALTH_RECORD," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "	   \"location_cache\": $LOCATION_CACHE," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "	   \"distance_unit\": \"$DISTANCE_UNIT\"," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "    \"reconnecting_timeout\": $RECONNECTION_TIMEOUT," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "	   \"logging_color\": $LOGGING_COLOR," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "	   \"daily_catch_limit\": $DAILY_CATCH_LIMIT," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "      \"avoid_circles\": $AVOID_CIRCLES," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "      \"max_circle_size\": $MAX_CIRCLE_SIZE," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "      \"cache_recent_forts\": $CACHE_RECENT_FORTS" $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "      \"show_at_start\": $SHOW_AT_START," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+		tools/config.pl -s ":" -w "1" "      \"show_count\": $SHOW_COUNT," $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+#		for option in "${POKEMON_INFO[@]}"; do
+			tools/config.pl -s ":" -w "1" "      \"pokemon_info\": [\"${POKEMON_INFO[@]}\",]" $PWD/PokemonGo-Bot/configs/"$USERNAME"_config.json 
+#		done	
+	fi
+		
+}
 	
 debug_screen() {
 echo "BRANCH=$BRANCH" # dev or master
@@ -712,7 +845,7 @@ menu_bot_config() {
 	if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 		create_config
 	else
-		print_command c "Create_config"
+		print_command c "Create config"
 		print_command e "Edit config"
 		rule_broken
 		print_command x "Return"
@@ -725,29 +858,6 @@ menu_bot_config() {
 		esac
 	fi
 }
-#	cd $pokebotpath
-#read -p "enter 1 for google or 2 for ptc 
-#" auth
-#read -p "Input username 
-#" username
-#read -p "Input password 
-#" -s password
-#read -p "
-#Input location 
-#" location
-#read -p "Input gmapkey 
-#" gmapkey
-#cp -f configs/config.json.example configs/config.json && chmod 755 configs/config.json
-#if [ "$auth" = "2" ] || [ "$auth" = "ptc" ]
-#then
-#sed -i "s/google/ptc/g" configs/config.json
-#fi
-#sed -i "s/YOUR_USERNAME/$username/g" configs/config.json
-#sed -i "s/YOUR_PASSWORD/$password/g" configs/config.json
-#sed -i "s/SOME_LOCATION/$location/g" configs/config.json
-#sed -i "s/GOOGLE_MAPS_API_KEY/$gmapkey/g" configs/config.json
-#echo "Edit ./configs/config.json to modify any other config."
-#}
 
 menu_branch() {
 	clear
@@ -785,28 +895,9 @@ menu_main() {
 		if [[ ! -n "$(find ./PokemonGo-Bot/configs -maxdepth 1 -name '*.json' -not -iname '*example*' -print -quit)" ]] ; then
 			if [[ -f ./tools/clone ]] ; then
 				rule
-#				log_empty
-#				printf '\t%s\n' "Please go to "
-#				log_empty
-#				printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
-#				log_empty
-#				printf '\t%s\n' "and create a configuration file to continue."
-#				printf '\t%s\n' "After you have done this, please enter 'r' "
-#				printf '\t%s\n' "or 'R' as choice or restart the wrapper."
-#				log_empty
-#				rule
 				print_command c "Create bot config"
 			elif [[ ! -f ./tools/clone ]] ; then
 				rule
-#				log_empty
-#				printf '\t%s\n' "Please go to "
-#				log_empty
-#				printf '\t%s\n' "$PWD/PokemonGo-Bot/configs"
-#				log_empty
-#				printf '\t%s\n' "and create a configuration file to continue."
-#				printf '\t%s\n' "After you have done this, please enter 'r' "
-#				printf '\t%s\n' "or 'R' as choice or restart the wrapper."
-#				log_empty
 				rule
 				log_empty
 				printf '\t%s\n' "It looks like you copied over an instance of the bot you had installed before."
@@ -902,31 +993,32 @@ menu_start() {
     if [[ "$COUNT" -eq 1 ]]; then
         ACTIVE_CONFIG="$(basename "${file_list[@]}")" # If we have only one database, there's nothing to choose from, so we can save some precious seconds
 		start_bot_file
-    fi
-    read -p "Please choose (x to return): " CHOICE
-	log_empty
-	case "$CHOICE" in
-	  	x|X) return 0 ;;
-        a|A) 
-			while read line ; do
-        		LASTFOUND="$(basename $line)"
-					BATCH_ARRAY[$i]=$LASTFOUND
-			    	i=$(($i+1))
-   			 done < <(find PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -not -iname "*path*" -maxdepth 1)
-			 batch_start 
-			;; 
-       	*)
-			for config in $CHOICE ; do
-        		if [[ -f "./PokemonGo-Bot/configs/$config" ]] ; then
-            		ACTIVE_CONFIG="$config"
-            		start_bot_file
-				else
-           			log_failure "Invalid selection"
-					press_enter        	
-				fi
-        	done
-        	;;
-    	esac
+    else
+		read -p "Please choose (x to return): " CHOICE
+		log_empty
+		case "$CHOICE" in
+			x|X) return 0 ;;
+			a|A) 
+				while read line ; do
+					LASTFOUND="$(basename $line)"
+						BATCH_ARRAY[$i]=$LASTFOUND
+						i=$(($i+1))
+				 done < <(find PokemonGo-Bot/configs -type f -iname "*.json" -not -iname "*example*" -not -iname "*path*" -maxdepth 1)
+				 batch_start 
+				;; 
+			*)
+				for config in $CHOICE ; do
+					if [[ -f "./PokemonGo-Bot/configs/$config" ]] ; then
+						ACTIVE_CONFIG="$config"
+						start_bot_file
+					else
+						log_failure "Invalid selection"
+						press_enter        	
+					fi
+				done
+				;;
+			esac
+	fi
 }
 
 menu_update() {
@@ -1022,19 +1114,19 @@ menu_wrapper_config() {
     case "$CHOICE" in
         t|T) 
  			if [[ $PROXY_THIS_BOT == Y ]] || [[ $PROXY_THIS_BOT == y ]] ; then
-		       	./tools/config.pl PROXY_THIS_BOT=n $PWD/$BOT_CFG/$CONFIG
+		       	tools/config.pl PROXY_THIS_BOT=n $PWD/$BOT_CFG/$CONFIG
 		       	menu_wrapper_config
 			else
-       			./tools/config.pl PROXY_THIS_BOT=y $PWD/$BOT_CFG/$CONFIG
+       			tools/config.pl PROXY_THIS_BOT=y $PWD/$BOT_CFG/$CONFIG
        			menu_wrapper_config
 			fi
          	;;
         s|S) 
  			if [[ $SELF_CHOSEN == Y ]] || [[ $SELF_CHOSEN == y ]] ; then
-		       	./tools/config.pl SELF_CHOSEN=n $PWD/$BOT_CFG/$CONFIG
+		       	tools/config.pl SELF_CHOSEN=n $PWD/$BOT_CFG/$CONFIG
 		       	menu_wrapper_config
 			else
-       			./tools/config.pl SELF_CHOSEN=y $PWD/$BOT_CFG/$CONFIG
+       			tools/config.pl SELF_CHOSEN=y $PWD/$BOT_CFG/$CONFIG
        			menu_wrapper_config
 			fi
          	;;
@@ -1361,7 +1453,7 @@ update_exit() {
 	case "$N_COUNTRY" in
 		x) menu_wrapper_config ;;
 		*)
-		   ./tools/config.pl COUNTRY=$N_COUNTRY $PWD/$BOT_CFG/$CONFIG
+		   tools/config.pl COUNTRY=$N_COUNTRY $PWD/$BOT_CFG/$CONFIG
 		   menu_wrapper_config
 		   ;;
 	esac
@@ -1383,7 +1475,7 @@ update_nodes() {
 	case $NODE in
 		x) menu_wrapper_config ;;
 		*)
-			./tools/config.pl EXIT_NODES=$NODE $PWD/$BOT_CFG/$CONFIG 
+			tools/config.pl EXIT_NODES=$NODE $PWD/$BOT_CFG/$CONFIG 
     		menu_wrapper_config
     		;;
     esac
