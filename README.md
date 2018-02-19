@@ -1,5 +1,7 @@
 #PokemonGo-Bot_wrapper_osx
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/633fbadfd36c4a7aaa4a897da8744d30)](https://app.codacy.com/app/ckrmml/-DISCONTINUED-PokemonGo-Bot_wrapper_osx?utm_source=github.com&utm_medium=referral&utm_content=ckrmml/-DISCONTINUED-PokemonGo-Bot_wrapper_osx&utm_campaign=badger)
+
 ##A wrapper file for [PokemonGo-Bot](https://github.com/PokemonGoF/PokemonGo-Bot) for OSX
 This wrapper script will allow you to install the PokemonGo-Bot on Mac OSX and execute as many instances as you like.
 
